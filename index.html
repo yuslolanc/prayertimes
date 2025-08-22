@@ -99,6 +99,75 @@
     height:auto;
     border-radius:8px;
   }
+  /* ====== Responsive tweaks ====== */
+
+/* Tablet-ish: tighten spacing & fonts a bit */
+@media (max-width: 900px) {
+  .shell { padding: 14px; gap: 14px; }
+  #clockNow { font-size: 36px; width: 128px; }
+  .logo { width: 96px; height: 96px; }
+  .title { font-size: 30px; }
+  .datechip { min-width: 260px; font-size: 24px; padding: 14px 18px; }
+  .datechip small { font-size: 20px; }
+  .datechip .hijri { font-size: 20px; }
+
+  .thead div { font-size: 26px; }
+  .row { padding: 14px 14px; }
+  .row .name, .row .time { font-size: 24px; }
+  .row .tomorrow { font-size: 18px; }
+}
+
+/* Phone: stack header, hide "Tomorrow" column, smaller fonts */
+@media (max-width: 600px) {
+  .shell { padding: 12px; gap: 12px; }
+
+  /* Header stacks: logo/title then date chip below */
+  .header.card {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    text-align: center;
+  }
+  .header .center { grid-column: 1; }
+  .datechip {
+    grid-column: 1;
+    justify-self: center;
+    min-width: 0;
+    padding: 12px 14px;
+    font-size: 18px;
+  }
+  .datechip small { font-size: 16px; margin-top: 0; }
+  .datechip .hijri { font-size: 16px; }
+
+  #clockNow { font-size: 32px; width: 120px; }
+  .logo { width: 84px; height: 84px; }
+  .title { font-size: 24px; }
+
+  /* Table: drop "Tomorrow" column on small screens */
+  .thead { grid-template-columns: 1.2fr 1fr; padding: 12px; }
+  .thead div:last-child { display: none; }      /* hide "Tomorrow" header */
+
+  .row {
+    grid-template-columns: 1.2fr 1fr;           /* name | time */
+    padding: 12px;
+  }
+  .row .tomorrow { display: none; }             /* hide tomorrow cell */
+
+  .row .name { font-size: 20px; }
+  .row .time { font-size: 20px; }
+  .inlinecd { font-size: 12px; }
+
+  /* Footer banner */
+  .footer-card { padding: 8px; border-radius: 10px; }
+  .footer-card img { border-radius: 6px; }
+}
+
+/* Very small phones */
+@media (max-width: 380px) {
+  .title { font-size: 20px; }
+  #clockNow { font-size: 28px; width: 110px; }
+  .row .name, .row .time { font-size: 18px; }
+}
+
 </style>
 </head>
 <body>
