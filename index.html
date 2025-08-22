@@ -23,7 +23,7 @@
     font-size: 42px;
     font-weight: 900;
     letter-spacing: 2px;
-    width: 148px;           /* ~133% of 112px logo */
+    width: 148px;          /* ~133% of 112px logo */
     max-width: 90%;
   }
 
@@ -75,14 +75,6 @@
   .count{display:flex; gap:8px; align-items:baseline}
   .count .num{font-size:28px; font-weight:900}
   .count .lab{font-size:12px; color:var(--muted); margin-left:2px}
-
-  /* Optional toolbar styles (no toolbar in this build; JS is guarded) */
-  .toolbar{display:flex; gap:12px; align-items:center; justify-content:flex-start; flex-wrap:wrap}
-  .btn{appearance:none; border:0; background:var(--accent); color:#00140a; font-weight:900; padding:10px 14px; border-radius:12px; cursor:pointer}
-  .btn:active{transform:translateY(1px)}
-  .btn.secondary{background:#1f2937; color:#e5e7eb; border:1px solid rgba(255,255,255,.08)}
-  .drop{flex:1; min-width:280px; border:2px dashed rgba(255,255,255,.2); border-radius:12px; padding:10px 14px; color:var(--muted); font-size:14px}
-  .drop.drag{border-color:var(--accent); color:#c7f9cc; background:rgba(34,197,94,.08)}
 </style>
 </head>
 <body>
@@ -140,7 +132,7 @@
   const rowsEl = document.getElementById('rows');
   const datechip = document.getElementById('datechip');
   const statusEl = document.getElementById('status');
-  const clockEl = document.getElementById('clockNow');
+  const clockEl  = document.getElementById('clockNow');
 
   function fmtTime(d){ return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:TZ}).format(d); }
   function fmtDateLong(d){ return new Intl.DateTimeFormat('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:TZ}).format(d); }
@@ -178,24 +170,24 @@
 
   function cleanText(t){
     if(!t) return '';
+    // strip BOM/nulls, normalise line-endings to \n
     t = t.replace(/^﻿/, '').replace(/\u0000/g,'');
-    t = t.replace(/\r(?!\n)/g, '\\n').replace(/\\r?\\n/g, '\\n');
-    t = t.replace(/\r\n/g,'\n');
+    t = t.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     return t;
   }
   function firstNonEmptyLine(text){
-    const lines = text.split(/\\r?\\n/).map(l=>l.trim());
+    const lines = text.split(/\n/).map(l=>l.trim());   // already normalised
     return lines.find(l => l.length>0) || '';
   }
   function detectDelimiter(text){
     const header = firstNonEmptyLine(text);
-    const cands=[',',';','\\t','|'];
+    const cands=[',',';','\t','|'];
     let best=',', n=0;
     for(const d of cands){ const m=(header.split(d).length-1); if(m>n){best=d;n=m;} }
     return best;
   }
   function parseCSV(text){
-    text = text.replace(/^﻿/,''); // strip BOM
+    text = cleanText(text);
     if(!text.trim()) return {headers:[], data:[]};
     const delim = detectDelimiter(text);
     const rows=[]; let cur='', row=[], inQ=false;
@@ -208,8 +200,7 @@
       }else{
         if(c==='"'){inQ=true;}
         else if(c===delim){ row.push(cur); cur=''; }
-        else if(c==='\\n' || c==='\\r'){
-          if(c==='\\r' && n==='\\n') i++;
+        else if(c==='\n'){
           if(cur.length || row.some(x => (x||'').trim()!=='')){ row.push(cur); rows.push(row); }
           row=[]; cur='';
         }else{ cur+=c; }
@@ -223,7 +214,7 @@
     return {headers, data, delim};
   }
 
-  const norm = s => (s||'').toLowerCase().replace(/[\\s_\\-]/g,'').trim();
+  const norm = s => (s||'').toLowerCase().replace(/[\s_\-]/g,'').trim();
   function findExact(headers, key){
     const target = norm(key);
     return headers.find(h => norm(h) === target) || null;
@@ -245,9 +236,9 @@
   }
   function parseDate(s){
     if(!s) return null; s=String(s).trim();
-    let m=s.match(/^(\\d{1,2})[\\/\\-](\\d{1,2})[\\/\\-](\\d{4})$/); if(m) return new Date(+m[3], +m[2]-1, +m[1]);
-    m=s.match(/^(\\d{1,2})[\\/\\-](\\d{1,2})[\\/\\-](\\d{2})$/); if(m) return new Date(2000+ +m[3], +m[2]-1, +m[1]);
-    m=s.match(/^(\\d{4})-(\\d{2})-(\\d{2})$/); if(m) return new Date(+m[1], +m[2]-1, +m[3]);
+    let m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/); if(m) return new Date(+m[3], +m[2]-1, +m[1]);
+    m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/); if(m) return new Date(2000+ +m[3], +m[2]-1, +m[1]);
+    m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/); if(m) return new Date(+m[1], +m[2]-1, +m[3]);
     const t=Date.parse(s); return isNaN(t)?null:new Date(t);
   }
   function sameDay(a,b){ return a && b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
@@ -266,12 +257,12 @@
   }
   function displayHHMM(s){
     if(!s) return '';
-    const m = String(s).match(/(\\d{1,2}):(\\d{2})/);
+    const m = String(s).match(/(\d{1,2}):(\d{2})/);
     return m ? `${m[1].padStart(2,'0')}:${m[2]}` : String(s);
   }
   function parseTimeToToday(s){
-    if(!s) return null; s=String(s).trim().toLowerCase().replace(/\\./g,':');
-    let m=s.match(/^(\\d{1,2}):(\\d{2})(?::(\\d{2}))?(?:\\s*([ap]m))?$/); if(!m) return null;
+    if(!s) return null; s=String(s).trim().toLowerCase().replace(/\./g,':');
+    let m=s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([ap]m))?$/); if(!m) return null;
     let h=+m[1], mi=+m[2], se=m[3]?+m[3]:0;
     if(m[4]==='pm'&&h<12)h+=12; if(m[4]==='am'&&h===12)h=0;
     const t=new Date(); t.setHours(h,mi,se,0); return t;
@@ -288,7 +279,6 @@
       if(tToday || tTomorrow) slots.push({label:p, today:tToday, tomorrow:tTomorrow});
     }
 
-    // Exact Jumu'ah columns (multiple spellings supported)
     const hJ1 = findExact(headers,'jumuah1') || findExact(headers,'jummah1') || findExact(headers,'jumuah_1') || findExact(headers,'jummah_1');
     const hJ2 = findExact(headers,'jumuah2') || findExact(headers,'jummah2') || findExact(headers,'jumuah_2') || findExact(headers,'jummah_2');
 
@@ -305,13 +295,13 @@
       const t1 = hJ1 ? todayRow.row[hJ1] : '';
       const t2 = hJ2 ? todayRow.row[hJ2] : '';
       const combined = fmtPair(t1,t2);
-      if(combined) slots.push({label:'Jummah 1st/2nd', today:combined, tomorrow:'', jumuah:true});
+      if(combined) slots.push({label:"Jummah 1st/2nd", today:combined, tomorrow:'', jumuah:true});
     }
     if(isFriTomorrow && (hJ1 || hJ2)){
       const t1 = hJ1 && tomorrowRow ? tomorrowRow.row[hJ1] : '';
       const t2 = hJ2 && tomorrowRow ? tomorrowRow.row[hJ2] : '';
       const combined = fmtPair(t1,t2);
-      if(combined) slots.push({label:'Jummah 1st/2nd', today:'', tomorrow:combined, jumuah:true});
+      if(combined) slots.push({label:"Jummah 1st/2nd", today:'', tomorrow:combined, jumuah:true});
     }
 
     let nextIdx=-1, nextTime=null;
@@ -405,52 +395,6 @@
       statusEl.textContent='Waiting for CSV…';
     }
   })();
-
-  // Optional (guarded) file/drag/refresh listeners if elements exist
-  const fileEl = document.getElementById('file');
-  const loadBtn = document.getElementById('loadBtn');
-  const refreshBtn = document.getElementById('refreshBtn');
-  const dropEl = document.getElementById('drop');
-
-  function decodeArrayBuffer(buf){
-    const bytes=new Uint8Array(buf);
-    if(bytes.length>=3 && bytes[0]===0xEF && bytes[1]===0xBB && bytes[2]===0xBF) return new TextDecoder('utf-8').decode(bytes.subarray(3));
-    if(bytes.length>=2 && bytes[0]===0xFF && bytes[1]===0xFE) return new TextDecoder('utf-16le').decode(bytes.subarray(2));
-    if(bytes.length>=2 && bytes[0]===0xFE && bytes[1]===0xFF) return new TextDecoder('utf-16be').decode(bytes.subarray(2));
-    try{ return new TextDecoder('utf-8').decode(bytes); }catch(_){ return String.fromCharCode.apply(null, bytes); }
-  }
-  function readFileAsText(file, cb){
-    const r=new FileReader();
-    r.onabort=()=>{ statusEl.textContent='Read aborted.'; };
-    r.onerror=()=>{ statusEl.textContent='Could not read file.'; };
-    r.onload=()=>{ try{ const text=decodeArrayBuffer(r.result); cb(text); }catch(e){ console.error(e); statusEl.textContent='Failed to decode file.'; } };
-    r.readAsArrayBuffer(file);
-  }
-  if(loadBtn && fileEl){
-    loadBtn.addEventListener('click', ()=> { statusEl.textContent='Choose a CSV file…'; fileEl.click(); });
-    fileEl.addEventListener('change', e=>{
-      const f=e.target.files?.[0]; if(!f){ statusEl.textContent='No file selected.'; return; }
-      statusEl.textContent=`Reading ${f.name} (${f.size} bytes)…`; readFileAsText(f, (text)=> loadFromText(text, f.name));
-    });
-  }
-  if(dropEl){
-    ['dragenter','dragover','dragleave','drop'].forEach(evt => dropEl.addEventListener(evt, e=>{e.preventDefault();e.stopPropagation();}));
-    ['dragenter','dragover'].forEach(evt => dropEl.addEventListener(evt, ()=>dropEl.classList.add('drag')));
-    ['dragleave','drop'].forEach(evt => dropEl.addEventListener(evt, ()=>dropEl.classList.remove('drag')));
-    dropEl.addEventListener('drop', e => {
-      const f=e.dataTransfer.files?.[0]; if(!f){ statusEl.textContent='No file dropped.'; return; }
-      statusEl.textContent=`Reading ${f.name} (${f.size} bytes)…`; readFileAsText(f, (text)=> loadFromText(text, f.name));
-    });
-  }
-  if(refreshBtn){
-    refreshBtn.addEventListener('click', async () => {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(STORAGE_NAME);
-      statusEl.textContent='Refreshing from server…';
-      const ok = await tryLoadFromServer();
-      if(!ok) statusEl.textContent='Could not reach server — still waiting for CSV or use Choose file.';
-    });
-  }
 
   function msToMidnight(){ const n=new Date(); const x=new Date(n); x.setHours(24,0,0,0); return x-n; }
   setTimeout(()=>location.reload(), msToMidnight()+5000);
