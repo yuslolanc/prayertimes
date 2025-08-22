@@ -54,7 +54,7 @@
     <div class="header card">
       <img class="logo" src="./logo.png" alt="Logo" onerror="this.style.display='none'"/>
       <div class="titles">
-        <div class="title">Masjid al Noor • Prayer Times</div>
+        <div class="title">Masjid al Noor • Iqamah Times</div>
         <div class="subtitle" id="loc">Lancaster</div>
       </div>
       <div class="datechip" id="datechip">--:--<small>—</small></div>
@@ -62,7 +62,7 @@
 
     <div class="table card">
       <div class="thead">
-        <div>Prayer</div><div>Jama'ah</div><div style="text-align:right">Tomorrow's Times</div>
+        <div>Prayer</div><div>Today's Jama'ah</div><div style="text-align:right">Tomorrow's Times</div>
       </div>
       <div class="rows" id="rows"></div>
     </div>
@@ -253,7 +253,7 @@
       return {...s, date:d};
     });
     if(nextIdx===-1){
-      const fajrIdx = parsed.findIndex(x=>x.label==='FAJR'&&x.today);
+      const fajrIdx = parsed.findIndex(x=>x.label==='Fajr'&&x.today);
       if(fajrIdx>=0){
         const d = parseTimeToToday(parsed[fajrIdx].today);
         if(d){ nextIdx=fajrIdx; nextTime=new Date(d.getTime()+24*3600*1000); }
