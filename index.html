@@ -331,13 +331,13 @@
       const t1 = hJ1 ? todayRow.row[hJ1] : '';
       const t2 = hJ2 ? todayRow.row[hJ2] : '';
       const combined = fmtPair(t1,t2);
-      if(combined) slots.splice(1,0,{label:'JUMUAH 1/2', today:combined, tomorrow:'', jumuah:true});
+      if(combined) slots.splice(1,0,{label:'Jummah 1/2', today:combined, tomorrow:'', jumuah:true});
     }
     if(isFriTomorrow && (hJ1 || hJ2)){
       const t1 = hJ1 && tomorrowRow ? tomorrowRow.row[hJ1] : '';
       const t2 = hJ2 && tomorrowRow ? tomorrowRow.row[hJ2] : '';
       const combined = fmtPair(t1,t2);
-      if(combined) slots.push({label:'JUMUAH 1/2', today:'', tomorrow:combined, jumuah:true});
+      if(combined) slots.push({label:'Jummah 1/2', today:'', tomorrow:combined, jumuah:true});
     }
 
     let nextIdx=-1, nextTime=null;
