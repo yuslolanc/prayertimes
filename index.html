@@ -6,11 +6,15 @@
 <title>Masjid al Noor • Iqamah Times</title>
 <style>
   :root{
-    --bg:#0a0f0f; --panel:#12181b; --accent:#22c55e; --muted:#97a3af; --text:#e8f0f2;
+    --bg:#0a0f0f; 
+    --panel:#12181b; 
+    --accent:#3b82f6;  /* BLUE accent */
+    --muted:#97a3af; 
+    --text:#e8f0f2;
   }
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;font-family:ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", sans-serif;color:var(--text)}
-  body{background: radial-gradient(1000px 600px at 70% -10%, rgba(34,197,94,.15) 0%, rgba(0,0,0,.65) 45%, rgba(0,0,0,.85) 100%);}
+  body{background: radial-gradient(1000px 600px at 70% -10%, rgba(59,130,246,.15) 0%, rgba(0,0,0,.65) 45%, rgba(0,0,0,.85) 100%);}
   .shell{position:relative; min-height:100%; padding:18px; display:flex; flex-direction:column; gap:18px}
   .card{background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0)); background-color:rgba(10,12,12,.65);
         border:1px solid rgba(255,255,255,.08); border-radius:20px; box-shadow:0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
@@ -56,7 +60,7 @@
     line-height:1.2;
   }
   .datechip small{display:block; font-size:27px; color:var(--muted); font-weight:700; margin-top:2px}
-  .datechip .hijri{display:block; font-size:24px; color:#c7f9cc; font-weight:800; margin-top:6px; letter-spacing:.2px}
+  .datechip .hijri{display:block; font-size:24px; color:#bfdbfe; font-weight:800; margin-top:6px; letter-spacing:.2px}
 
   /* 3-column table */
   .table.card{padding:0; overflow:hidden}
@@ -66,10 +70,10 @@
   .row{display:grid; grid-template-columns:2fr 1fr 1fr; align-items:center; gap:0; padding:18px 16px; border-top:1px solid rgba(255,255,255,.06)}
   .row .name{font-size:28px; font-weight:800}
   .row .time{font-size:28px; font-weight:900; letter-spacing:.5px}
-  .row .tomorrow{justify-self:end; font-weight:900; font-size:22px; color:#dbeafe}
-  .row.next{position:relative; background:linear-gradient(90deg, rgba(34,197,94,.08), rgba(255,255,255,0));}
+  .row .tomorrow{justify-self:end; font-weight:900; font-size:22px; color:#bfdbfe}
+  .row.next{position:relative; background:linear-gradient(90deg, rgba(59,130,246,.08), rgba(255,255,255,0));}
   .row.next::after{content:''; position:absolute; inset:0; outline:3px solid var(--accent); border-radius:14px; opacity:.35; pointer-events:none}
-  .row.note{grid-column:1 / -1; text-align:center; color:#a7f3d0; font-weight:700; font-style:italic; padding:8px 0;}
+  .row.note{grid-column:1 / -1; text-align:center; color:#bfdbfe; font-weight:700; font-style:italic; padding:8px 0;}
 
   .next.card{display:flex; gap:16px; align-items:center; padding:18px}
   .next h3{margin:0; font-size:14px; color:var(--muted); font-weight:800; letter-spacing:.5px; text-transform:uppercase}
@@ -149,7 +153,7 @@
     }catch(e){ return approxHijri(d); }
   }
   function approxHijri(g){
-    const months = ["Muharram","Safar","Rabiʿ al‑Awwal","Rabiʿ al‑Thani","Jumada al‑Ula","Jumada al‑Akhira","Rajab","Shaʿban","Ramadan","Shawwal","Dhu al‑Qaʿdah","Dhu al‑Hijjah"];
+    const months = ["Muharram","Safar","Rabiʿ al-Awwal","Rabiʿ al-Thani","Jumada al-Ula","Jumada al-Akhira","Rajab","Shaʿban","Ramadan","Shawwal","Dhu al-Qaʿdah","Dhu al-Hijjah"];
     const day = g.getUTCDate(); const month = g.getUTCMonth()+1; const year = g.getUTCFullYear();
     const jd = Math.floor((1461*(year+4800-Math.floor((14-month)/12)))/4) + Math.floor((367*(month-2-12*Math.floor((14-month)/12)))/12) - Math.floor((3*Math.floor((year+4900-Math.floor((14-month)/12))/100))/4) + day - 32075;
     const islamic = Math.floor((jd - 1948439.5) / 29.530588861);
@@ -307,8 +311,8 @@
     const isFriToday = now.getDay()===5;
     const isFriTomorrow = (new Date(now.getFullYear(), now.getMonth(), now.getDate()+1)).getDay()===5;
 
-    // Blank Dhuhr cells on Fridays as requested
-    const dhuhr = slots.find(s=>s.label==='DHUHR');
+    // Blank Dhuhr cells on Fridays as requested (case-insensitive match)
+    const dhuhr = slots.find(s=>s.label.toUpperCase()==='DHUHR');
     if(dhuhr){
       if(isFriToday) dhuhr.today='';
       if(isFriTomorrow) dhuhr.tomorrow='';
@@ -353,7 +357,7 @@
       return {...s, date:d};
     });
     if(nextIdx===-1){
-      const fajrIdx = parsed.findIndex(x=>x.label==='FAJR'&&x.today);
+      const fajrIdx = parsed.findIndex(x=>x.label.toUpperCase()==='FAJR' && x.today);
       if(fajrIdx>=0){
         const d = parseTimeToToday(parsed[fajrIdx].today);
         if(d){ nextIdx=fajrIdx; nextTime=new Date(d.getTime()+24*3600*1000); }
@@ -361,7 +365,7 @@
     }
 
     parsed.forEach((s,i)=>{
-      const left = (s.label==='FAJR'?'Fajr': s.label==='DHUHR'?'Dhur': s.label==='ASR'?'Asr': s.label==='MAGHRIB'?'Maghrib': s.label==='ISHA'?'Isha': s.label);
+      const left = (s.label.toUpperCase()==='FAJR'?'Fajr': s.label.toUpperCase()==='DHUHR'?'Dhur': s.label.toUpperCase()==='ASR'?'Asr': s.label.toUpperCase()==='MAGHRIB'?'Maghrib': s.label.toUpperCase()==='ISHA'?'Isha': s.label);
       const el=document.createElement('div');
       el.className='row'+(i===nextIdx?' next':'');
       el.innerHTML = `<div class="name">${left}</div>
