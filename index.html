@@ -15,14 +15,48 @@
   .card{background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0)); background-color:rgba(10,12,12,.65);
         border:1px solid rgba(255,255,255,.08); border-radius:20px; box-shadow:0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
         backdrop-filter:blur(10px) saturate(120%);}
-  .header.card{display:flex; align-items:center; gap:18px; padding:14px 16px}
-  .logo{height:56px;width:56px; object-fit:contain; border-radius:12px; background:rgba(255,255,255,.06)}
-  .titles{display:flex; flex-direction:column; gap:4px}
-  .title{font-size:34px; font-weight:800; letter-spacing:.3px}
+
+  /* Top digital clock */
+  #clockNow {
+    margin: 0 auto 8px auto;
+    text-align: center;
+    font-size: 42px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    width: 148px;           /* ~133% of 112px logo */
+    max-width: 90%;
+  }
+
+  /* Header: center logo+title, keep datechip on right */
+  .header.card{
+    display:grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items:center;
+    padding:14px 16px;
+  }
+  .header .center{
+    grid-column:2;
+    display:flex; align-items:center; justify-content:center; gap:14px;
+  }
+  .logo{
+    height:112px; width:112px;               /* ~2× larger */
+    object-fit:contain; border-radius:16px; background:rgba(255,255,255,.06)
+  }
+  .titles{display:flex; flex-direction:column; gap:6px; text-align:center}
+  .title{font-size:36px; font-weight:800; letter-spacing:.3px}
   .subtitle{font-size:14px; color:var(--muted)}
-  .datechip{margin-left:auto; display:flex; align-items:center; justify-content:center; padding:12px 18px; border-radius:16px; background:var(--panel);
-            border:1px solid rgba(255,255,255,.08); min-width:220px; text-align:center; font-weight:800; font-size:22px;}
-  .datechip small{display:block; font-size:12px; color:var(--muted); font-weight:600; margin-top:2px}
+
+  .datechip{
+    grid-column:3; justify-self:end;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:12px 18px; border-radius:16px; background:var(--panel);
+    border:1px solid rgba(255,255,255,.08); min-width:240px; text-align:center;
+    font-weight:800; font-size:20px;          /* no time inside anymore */
+    line-height:1.2;
+  }
+  .datechip small{display:block; font-size:18px; color:var(--muted); font-weight:700; margin-top:2px} /* bigger Gregorian date */
+  .datechip .hijri{display:block; font-size:16px; color:#c7f9cc; font-weight:800; margin-top:4px; letter-spacing:.2px}
+
   .table.card{padding:0; overflow:hidden}
   .thead{display:grid; grid-template-columns:2fr 1fr 1fr; gap:0; padding:14px 16px; background:rgba(255,255,255,.04); border-bottom:1px solid rgba(255,255,255,.06)}
   .thead div{font-size:16px; color:var(--muted); font-weight:700; letter-spacing:.4px}
@@ -41,6 +75,8 @@
   .count{display:flex; gap:8px; align-items:baseline}
   .count .num{font-size:28px; font-weight:900}
   .count .lab{font-size:12px; color:var(--muted); margin-left:2px}
+
+  /* Optional toolbar styles (no toolbar in this build; JS is guarded) */
   .toolbar{display:flex; gap:12px; align-items:center; justify-content:flex-start; flex-wrap:wrap}
   .btn{appearance:none; border:0; background:var(--accent); color:#00140a; font-weight:900; padding:10px 14px; border-radius:12px; cursor:pointer}
   .btn:active{transform:translateY(1px)}
@@ -51,13 +87,23 @@
 </head>
 <body>
   <div class="shell">
+
+    <!-- Top digital clock -->
+    <div id="clockNow">--:--</div>
+
     <div class="header card">
-      <img class="logo" src="./logo.png" alt="Logo" onerror="this.style.display='none'"/>
-      <div class="titles">
-        <div class="title">Masjid al Noor • Iqamah Times</div>
-        <div class="subtitle" id="loc">Lancaster</div>
+      <div></div> <!-- left spacer -->
+      <div class="center">
+        <img class="logo" src="./logo.png" alt="Logo" onerror="this.style.display='none'"/>
+        <div class="titles">
+          <div class="title">Masjid al Noor • Iqamah Times</div>
+          <div class="subtitle" id="loc">Lancaster</div>
+        </div>
       </div>
-      <div class="datechip" id="datechip">--:--<small>—</small></div>
+      <div class="datechip" id="datechip">
+        <small>—</small>
+        <span class="hijri" id="hijri">—</span>
+      </div>
     </div>
 
     <div class="table card">
@@ -79,8 +125,8 @@
         <div class="num" id="cdSecs">--</div><div class="lab">s</div>
       </div>
     </div>
-      <div id="status" style="min-width:260px; text-align:right; color:var(--muted);"></div>
-    </div>
+
+    <div id="status" style="min-width:260px; text-align:right; color:var(--muted);"></div>
   </div>
 
 <script>
@@ -89,40 +135,67 @@
   const STORAGE_KEY  = 'kioskCSVTextV7';
   const STORAGE_NAME = 'kioskCSVNameV7';
   const AUTO_FILE    = './prayertime.csv';
-  const PRS = ['Fajr','Dhur','Asr','Maghrib','Isha'];
+  const PRS = ['FAJR','DHUHR','ASR','MAGHRIB','ISHA'];
 
   const rowsEl = document.getElementById('rows');
   const datechip = document.getElementById('datechip');
   const statusEl = document.getElementById('status');
-  const fileEl = document.getElementById('file');
-  const loadBtn = document.getElementById('loadBtn');
-  const refreshBtn = document.getElementById('refreshBtn');
-  const dropEl = document.getElementById('drop');
+  const clockEl = document.getElementById('clockNow');
 
   function fmtTime(d){ return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:TZ}).format(d); }
   function fmtDateLong(d){ return new Intl.DateTimeFormat('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:TZ}).format(d); }
-  function tick(){ const now=new Date(); datechip.innerHTML = fmtTime(now) + '<small>'+fmtDateLong(now)+'</small>'; }
+
+  // Hijri (Umm al-Qura) with fallback
+  function fmtHijri(d){
+    try{
+      const f = new Intl.DateTimeFormat('en-GB-u-ca-islamic-umalqura',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:TZ});
+      const out = f.format(d);
+      if(/January|February|March|April|May|June|July|August|September|October|November|December/.test(out)) return approxHijri(d);
+      return out.replace(' AH',' AH');
+    }catch(e){ return approxHijri(d); }
+  }
+  function approxHijri(g){
+    // Lightweight approximation (±1 day typical)
+    const months = ["Muharram","Safar","Rabiʿ al‑Awwal","Rabiʿ al‑Thani","Jumada al‑Ula","Jumada al‑Akhira","Rajab","Shaʿban","Ramadan","Shawwal","Dhu al‑Qaʿdah","Dhu al‑Hijjah"];
+    const day = g.getUTCDate(); const month = g.getUTCMonth()+1; const year = g.getUTCFullYear();
+    const jd = Math.floor((1461*(year+4800-Math.floor((14-month)/12)))/4) + Math.floor((367*(month-2-12*Math.floor((14-month)/12)))/12) - Math.floor((3*Math.floor((year+4900-Math.floor((14-month)/12))/100))/4) + day - 32075;
+    const islamic = Math.floor((jd - 1948439.5) / 29.530588861);
+    const iMonth = Math.max(1, Math.min(12, Math.floor((jd - 1948439.5 - islamic*29.530588861) / 29.530588861 * 12) + 1));
+    const iDay   = Math.max(1, Math.min(30, Math.floor(jd - (islamic*29.530588861 + 1948439.5) + 1)));
+    const iYear  = Math.floor((islamic + 8) / 12) + 1 + 1440 - 1;
+    return `${months[iMonth-1]} ${iDay}, ${iYear} AH`;
+  }
+
+  function tick(){
+    const now=new Date();
+    const timeNow = fmtTime(now);
+    if(clockEl) clockEl.textContent = timeNow; // Top digital clock only
+    datechip.innerHTML =
+      '<small>'+fmtDateLong(now)+'</small>' +
+      '<span class="hijri">'+fmtHijri(now)+'</span>';
+  }
   tick(); setInterval(tick,1000);
 
   function cleanText(t){
     if(!t) return '';
     t = t.replace(/^﻿/, '').replace(/\u0000/g,'');
-    t = t.replace(/\r(?!\n)/g, '\n');
+    t = t.replace(/\r(?!\n)/g, '\\n').replace(/\\r?\\n/g, '\\n');
+    t = t.replace(/\r\n/g,'\n');
     return t;
   }
   function firstNonEmptyLine(text){
-    const lines = text.split(/\r?\n/).map(l=>l.trim());
+    const lines = text.split(/\\r?\\n/).map(l=>l.trim());
     return lines.find(l => l.length>0) || '';
-    }
+  }
   function detectDelimiter(text){
     const header = firstNonEmptyLine(text);
-    const cands=[',',';','\t','|'];
+    const cands=[',',';','\\t','|'];
     let best=',', n=0;
     for(const d of cands){ const m=(header.split(d).length-1); if(m>n){best=d;n=m;} }
     return best;
   }
   function parseCSV(text){
-    text = cleanText(text);
+    text = text.replace(/^﻿/,''); // strip BOM
     if(!text.trim()) return {headers:[], data:[]};
     const delim = detectDelimiter(text);
     const rows=[]; let cur='', row=[], inQ=false;
@@ -135,8 +208,8 @@
       }else{
         if(c==='"'){inQ=true;}
         else if(c===delim){ row.push(cur); cur=''; }
-        else if(c==='\n' || c==='\r'){
-          if(c==='\r' && n==='\n') i++;
+        else if(c==='\\n' || c==='\\r'){
+          if(c==='\\r' && n==='\\n') i++;
           if(cur.length || row.some(x => (x||'').trim()!=='')){ row.push(cur); rows.push(row); }
           row=[]; cur='';
         }else{ cur+=c; }
@@ -150,7 +223,7 @@
     return {headers, data, delim};
   }
 
-  const norm = s => (s||'').toLowerCase().replace(/[\s_\-]/g,'').trim();
+  const norm = s => (s||'').toLowerCase().replace(/[\\s_\\-]/g,'').trim();
   function findExact(headers, key){
     const target = norm(key);
     return headers.find(h => norm(h) === target) || null;
@@ -172,9 +245,9 @@
   }
   function parseDate(s){
     if(!s) return null; s=String(s).trim();
-    let m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/); if(m) return new Date(+m[3], +m[2]-1, +m[1]);
-    m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/); if(m) return new Date(2000+ +m[3], +m[2]-1, +m[1]);
-    m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/); if(m) return new Date(+m[1], +m[2]-1, +m[3]);
+    let m=s.match(/^(\\d{1,2})[\\/\\-](\\d{1,2})[\\/\\-](\\d{4})$/); if(m) return new Date(+m[3], +m[2]-1, +m[1]);
+    m=s.match(/^(\\d{1,2})[\\/\\-](\\d{1,2})[\\/\\-](\\d{2})$/); if(m) return new Date(2000+ +m[3], +m[2]-1, +m[1]);
+    m=s.match(/^(\\d{4})-(\\d{2})-(\\d{2})$/); if(m) return new Date(+m[1], +m[2]-1, +m[3]);
     const t=Date.parse(s); return isNaN(t)?null:new Date(t);
   }
   function sameDay(a,b){ return a && b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
@@ -193,12 +266,12 @@
   }
   function displayHHMM(s){
     if(!s) return '';
-    const m = String(s).match(/(\d{1,2}):(\d{2})/);
+    const m = String(s).match(/(\\d{1,2}):(\\d{2})/);
     return m ? `${m[1].padStart(2,'0')}:${m[2]}` : String(s);
   }
   function parseTimeToToday(s){
-    if(!s) return null; s=String(s).trim().toLowerCase().replace(/\./g,':');
-    let m=s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([ap]m))?$/); if(!m) return null;
+    if(!s) return null; s=String(s).trim().toLowerCase().replace(/\\./g,':');
+    let m=s.match(/^(\\d{1,2}):(\\d{2})(?::(\\d{2}))?(?:\\s*([ap]m))?$/); if(!m) return null;
     let h=+m[1], mi=+m[2], se=m[3]?+m[3]:0;
     if(m[4]==='pm'&&h<12)h+=12; if(m[4]==='am'&&h===12)h=0;
     const t=new Date(); t.setHours(h,mi,se,0); return t;
@@ -215,6 +288,7 @@
       if(tToday || tTomorrow) slots.push({label:p, today:tToday, tomorrow:tTomorrow});
     }
 
+    // Exact Jumu'ah columns (multiple spellings supported)
     const hJ1 = findExact(headers,'jumuah1') || findExact(headers,'jummah1') || findExact(headers,'jumuah_1') || findExact(headers,'jummah_1');
     const hJ2 = findExact(headers,'jumuah2') || findExact(headers,'jummah2') || findExact(headers,'jumuah_2') || findExact(headers,'jummah_2');
 
@@ -328,9 +402,15 @@
       loadFromText(cached,name);
     }
     if(!ok && !cached){
-      statusEl.textContent='Waiting for CSV… (upload or drag & drop)';
+      statusEl.textContent='Waiting for CSV…';
     }
   })();
+
+  // Optional (guarded) file/drag/refresh listeners if elements exist
+  const fileEl = document.getElementById('file');
+  const loadBtn = document.getElementById('loadBtn');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const dropEl = document.getElementById('drop');
 
   function decodeArrayBuffer(buf){
     const bytes=new Uint8Array(buf);
@@ -346,26 +426,31 @@
     r.onload=()=>{ try{ const text=decodeArrayBuffer(r.result); cb(text); }catch(e){ console.error(e); statusEl.textContent='Failed to decode file.'; } };
     r.readAsArrayBuffer(file);
   }
-  loadBtn.addEventListener('click', ()=> { statusEl.textContent='Choose a CSV file…'; fileEl.click(); });
-  fileEl.addEventListener('change', e=>{
-    const f=e.target.files?.[0]; if(!f){ statusEl.textContent='No file selected.'; return; }
-    statusEl.textContent=`Reading ${f.name} (${f.size} bytes)…`; readFileAsText(f, (text)=> loadFromText(text, f.name));
-  });
-  ['dragenter','dragover','dragleave','drop'].forEach(evt => dropEl.addEventListener(evt, e=>{e.preventDefault();e.stopPropagation();}));
-  ['dragenter','dragover'].forEach(evt => dropEl.addEventListener(evt, ()=>dropEl.classList.add('drag')));
-  ['dragleave','drop'].forEach(evt => dropEl.addEventListener(evt, ()=>dropEl.classList.remove('drag')));
-  dropEl.addEventListener('drop', e => {
-    const f=e.dataTransfer.files?.[0]; if(!f){ statusEl.textContent='No file dropped.'; return; }
-    statusEl.textContent=`Reading ${f.name} (${f.size} bytes)…`; readFileAsText(f, (text)=> loadFromText(text, f.name));
-  });
-
-  refreshBtn.addEventListener('click', async () => {
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(STORAGE_NAME);
-    statusEl.textContent='Refreshing from server…';
-    const ok = await tryLoadFromServer();
-    if(!ok) statusEl.textContent='Could not reach server — still waiting for CSV or use Choose file.';
-  });
+  if(loadBtn && fileEl){
+    loadBtn.addEventListener('click', ()=> { statusEl.textContent='Choose a CSV file…'; fileEl.click(); });
+    fileEl.addEventListener('change', e=>{
+      const f=e.target.files?.[0]; if(!f){ statusEl.textContent='No file selected.'; return; }
+      statusEl.textContent=`Reading ${f.name} (${f.size} bytes)…`; readFileAsText(f, (text)=> loadFromText(text, f.name));
+    });
+  }
+  if(dropEl){
+    ['dragenter','dragover','dragleave','drop'].forEach(evt => dropEl.addEventListener(evt, e=>{e.preventDefault();e.stopPropagation();}));
+    ['dragenter','dragover'].forEach(evt => dropEl.addEventListener(evt, ()=>dropEl.classList.add('drag')));
+    ['dragleave','drop'].forEach(evt => dropEl.addEventListener(evt, ()=>dropEl.classList.remove('drag')));
+    dropEl.addEventListener('drop', e => {
+      const f=e.dataTransfer.files?.[0]; if(!f){ statusEl.textContent='No file dropped.'; return; }
+      statusEl.textContent=`Reading ${f.name} (${f.size} bytes)…`; readFileAsText(f, (text)=> loadFromText(text, f.name));
+    });
+  }
+  if(refreshBtn){
+    refreshBtn.addEventListener('click', async () => {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(STORAGE_NAME);
+      statusEl.textContent='Refreshing from server…';
+      const ok = await tryLoadFromServer();
+      if(!ok) statusEl.textContent='Could not reach server — still waiting for CSV or use Choose file.';
+    });
+  }
 
   function msToMidnight(){ const n=new Date(); const x=new Date(n); x.setHours(24,0,0,0); return x-n; }
   setTimeout(()=>location.reload(), msToMidnight()+5000);
