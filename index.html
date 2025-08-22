@@ -89,7 +89,7 @@
   const STORAGE_KEY  = 'kioskCSVTextV7';
   const STORAGE_NAME = 'kioskCSVNameV7';
   const AUTO_FILE    = './prayertime.csv';
-  const PRS = ['FAJR','DHUHR','ASR','MAGHRIB','ISHA'];
+  const PRS = ['Fajr','DHUHR','ASR','MAGHRIB','ISHA'];
 
   const rowsEl = document.getElementById('rows');
   const datechip = document.getElementById('datechip');
@@ -253,7 +253,7 @@
       return {...s, date:d};
     });
     if(nextIdx===-1){
-      const fajrIdx = parsed.findIndex(x=>x.label==='Fajr'&&x.today);
+      const fajrIdx = parsed.findIndex(x=>x.label==='FAJR'&&x.today);
       if(fajrIdx>=0){
         const d = parseTimeToToday(parsed[fajrIdx].today);
         if(d){ nextIdx=fajrIdx; nextTime=new Date(d.getTime()+24*3600*1000); }
