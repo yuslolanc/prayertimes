@@ -31,7 +31,7 @@
     max-width: 90%;
   }
 
-  /* Header grid: center column holds logo+title stacked, right has date chip */
+  /* Header grid */
   .header.card{
     display:grid;
     grid-template-columns: 1fr auto 1fr;
@@ -133,12 +133,17 @@
   const STORAGE_KEY  = 'kioskCSVTextV7';
   const STORAGE_NAME = 'kioskCSVNameV7';
   const AUTO_FILE    = './prayertime.csv';
-  const PRS = ['Fajr','Dhur','Asr','Maghrib','Isha'];
+
+  /* Canonical labels */
+  const PRS = ['Fajr','Dhuhr','Asr','Maghrib','Isha'];
 
   const rowsEl = document.getElementById('rows');
   const datechip = document.getElementById('datechip');
   const statusEl = document.getElementById('status');
   const clockEl  = document.getElementById('clockNow');
+
+  const norm = s => (s||'').toLowerCase().replace(/[\s_\-]/g,'').trim();
+  const isDhuhr = s => ['dhuhr','dhur','zuhr','zuhur','duhr'].includes(norm(s));
 
   function fmtTime(d){ return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:TZ}).format(d); }
   function fmtDateLong(d){ return new Intl.DateTimeFormat('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:TZ}).format(d); }
@@ -219,8 +224,6 @@
     return {headers, data, delim};
   }
 
-  const norm = s => (s||'').toLowerCase().replace(/[\s_\-]/g,'').trim();
-
   // prevent reusing the same CSV column for different prayers
   const usedCols = new Set();
   function claim(col){ if(col) usedCols.add(col); return col; }
@@ -300,6 +303,7 @@
     usedCols.clear();
     const slots=[];
 
+    // Build slots using canonical labels
     for(const p of PRS){
       const col=findPrayerHeader(headers,p);
       const tToday = col? String(todayRow.row[col]||'').trim():'';
@@ -311,14 +315,15 @@
     const isFriToday = now.getDay()===5;
     const isFriTomorrow = (new Date(now.getFullYear(), now.getMonth(), now.getDate()+1)).getDay()===5;
 
-    // Blank Dhuhr cells on Fridays as requested (case-insensitive match)
-    const dhuhr = slots.find(s=>s.label.toUpperCase()==='DHUHR');
+    // ---- FIX: robust Friday blanking for Dhuhr ----
+    const dhuhr = slots.find(s => isDhuhr(s.label));
     if(dhuhr){
-      if(isFriToday) dhuhr.today='';
-      if(isFriTomorrow) dhuhr.tomorrow='';
+      if(isFriToday)    dhuhr.today   = '';
+      if(isFriTomorrow) dhuhr.tomorrow= '';
     }
+    // -----------------------------------------------
 
-    // Jumu'ah pairing (multiple spellings)
+    // Jumu'ah pairing (multiple spellings in CSV headers)
     function findExact(headers, key){
       const target = norm(key);
       return headers.find(h => norm(h) === target) || null;
@@ -357,7 +362,7 @@
       return {...s, date:d};
     });
     if(nextIdx===-1){
-      const fajrIdx = parsed.findIndex(x=>x.label.toUpperCase()==='FAJR' && x.today);
+      const fajrIdx = parsed.findIndex(x=>norm(x.label)==='fajr' && x.today);
       if(fajrIdx>=0){
         const d = parseTimeToToday(parsed[fajrIdx].today);
         if(d){ nextIdx=fajrIdx; nextTime=new Date(d.getTime()+24*3600*1000); }
@@ -365,7 +370,9 @@
     }
 
     parsed.forEach((s,i)=>{
-      const left = (s.label.toUpperCase()==='FAJR'?'Fajr': s.label.toUpperCase()==='DHUHR'?'Dhur': s.label.toUpperCase()==='ASR'?'Asr': s.label.toUpperCase()==='MAGHRIB'?'Maghrib': s.label.toUpperCase()==='ISHA'?'Isha': s.label);
+      const n = norm(s.label);
+      const left = n==='fajr'?'Fajr': n==='dhuhr'||n==='dhur'||n==='zuhr'||n==='zuhur'?'Dhuhr'
+                  : n==='asr'?'Asr': n==='maghrib'?'Maghrib': n==='isha'?'Isha': s.label;
       const el=document.createElement('div');
       el.className='row'+(i===nextIdx?' next':'');
       el.innerHTML = `<div class="name">${left}</div>
