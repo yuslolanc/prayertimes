@@ -31,7 +31,7 @@
     max-width: 90%;
   }
 
-  /* Header grid */
+  /* Header */
   .header.card{
     display:grid;
     grid-template-columns: 1fr auto 1fr;
@@ -69,19 +69,20 @@
   .rows{display:flex; flex-direction:column}
   .row{display:grid; grid-template-columns:2fr 1fr 1fr; align-items:center; gap:0; padding:18px 16px; border-top:1px solid rgba(255,255,255,.06)}
   .row .name{font-size:28px; font-weight:800}
-  .row .time{font-size:28px; font-weight:900; letter-spacing:.5px}
+  .row .time{font-size:28px; font-weight:900; letter-spacing:.5px; display:flex; flex-direction:column;}
   .row .tomorrow{justify-self:end; font-weight:900; font-size:22px; color:#bfdbfe}
   .row.next{position:relative; background:linear-gradient(90deg, rgba(59,130,246,.08), rgba(255,255,255,0));}
   .row.next::after{content:''; position:absolute; inset:0; outline:3px solid var(--accent); border-radius:14px; opacity:.35; pointer-events:none}
-  .row.note{grid-column:1 / -1; text-align:center; color:#bfdbfe; font-weight:700; font-style:italic; padding:8px 0;}
 
-  .next.card{display:flex; gap:16px; align-items:center; padding:18px}
-  .next h3{margin:0; font-size:14px; color:var(--muted); font-weight:800; letter-spacing:.5px; text-transform:uppercase}
-  .next .big{font-size:28px; font-weight:900}
-  .spacer{flex:1}
-  .count{display:flex; gap:8px; align-items:baseline}
-  .count .num{font-size:28px; font-weight:900}
-  .count .lab{font-size:12px; color:#aab4bf; margin-left:2px}
+  /* Inline countdown (only shows on the highlighted row) */
+  .inlinecd{
+    margin-top:6px;
+    font-size:14px;
+    font-weight:800;
+    letter-spacing:.5px;
+    color:#bfdbfe;
+    opacity:.95;
+  }
 </style>
 </head>
 <body>
@@ -111,19 +112,6 @@
       <div class="rows" id="rows"></div>
     </div>
 
-    <div class="next card" id="nextCard">
-      <div>
-        <h3>Next Prayer</h3>
-        <div class="big" id="nextLabel">—</div>
-      </div>
-      <div class="spacer"></div>
-      <div class="count">
-        <div class="num" id="cdHours">--</div><div class="lab">h</div>
-        <div class="num" id="cdMins">--</div><div class="lab">m</div>
-        <div class="num" id="cdSecs">--</div><div class="lab">s</div>
-      </div>
-    </div>
-
     <div id="status" style="min-width:260px; text-align:right; color:var(--muted);"></div>
   </div>
 
@@ -144,6 +132,10 @@
 
   const norm = s => (s||'').toLowerCase().replace(/[\s_\-]/g,'').trim();
   const isDhuhr = s => ['dhuhr','dhur','zuhr','zuhur','duhr'].includes(norm(s));
+
+  let cdTimer = null;         // countdown interval
+  let lastNextTime = null;    // Date of upcoming iqamah
+  let cache = null;           // {todayRow, tomorrowRow, headers} for re-render
 
   function fmtTime(d){ return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:TZ}).format(d); }
   function fmtDateLong(d){ return new Intl.DateTimeFormat('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:TZ}).format(d); }
@@ -298,7 +290,32 @@
     const t=new Date(); t.setHours(h,mi,se,0); return t;
   }
 
+  function startCountdown(nextTime){
+    if(cdTimer) clearInterval(cdTimer);
+    lastNextTime = nextTime;
+
+    function tickCD(){
+      const el = document.getElementById('inlineCD');
+      if(!el || !lastNextTime){ return; }
+      let diff = Math.floor((lastNextTime - new Date())/1000);
+      if(diff < 0) diff = 0;
+      const h=Math.floor(diff/3600), m=Math.floor((diff%3600)/60), s=diff%60;
+      el.textContent = `T-${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+      // When countdown finishes, re-render to move the highlight to the next prayer
+      if(diff === 0 && cache){
+        clearInterval(cdTimer);
+        render(cache.todayRow, cache.tomorrowRow, cache.headers);
+      }
+    }
+    tickCD();
+    cdTimer = setInterval(tickCD, 1000);
+  }
+
   function render(todayRow, tomorrowRow, headers){
+    // keep cache for re-render after rollover
+    cache = {todayRow, tomorrowRow, headers};
+
     rowsEl.innerHTML='';
     usedCols.clear();
     const slots=[];
@@ -315,15 +332,14 @@
     const isFriToday = now.getDay()===5;
     const isFriTomorrow = (new Date(now.getFullYear(), now.getMonth(), now.getDate()+1)).getDay()===5;
 
-    // ---- FIX: robust Friday blanking for Dhuhr ----
+    // Friday blanking for Dhuhr
     const dhuhr = slots.find(s => isDhuhr(s.label));
     if(dhuhr){
       if(isFriToday)    dhuhr.today   = '';
       if(isFriTomorrow) dhuhr.tomorrow= '';
     }
-    // -----------------------------------------------
 
-    // Jumu'ah pairing (multiple spellings in CSV headers)
+    // Jumu'ah times (optional CSV columns jumuah1/jumuah2)
     function findExact(headers, key){
       const target = norm(key);
       return headers.find(h => norm(h) === target) || null;
@@ -335,7 +351,6 @@
       const a=displayHHMM(t1), b=displayHHMM(t2);
       return [a,b].filter(Boolean).join(' · ');
     }
-
     if(isFriToday && (hJ1 || hJ2)){
       const t1 = hJ1 ? todayRow.row[hJ1] : '';
       const t2 = hJ2 ? todayRow.row[hJ2] : '';
@@ -349,6 +364,7 @@
       if(combined) slots.push({label:'Jummah 1/2', today:'', tomorrow:combined, jumuah:true});
     }
 
+    // Determine next upcoming prayer
     let nextIdx=-1, nextTime=null;
     const parsed = slots.map((s,i)=>{
       let d=null;
@@ -369,28 +385,32 @@
       }
     }
 
+    // Build rows; add inline countdown in the "time" cell of the next row
     parsed.forEach((s,i)=>{
       const n = norm(s.label);
       const left = n==='fajr'?'Fajr': n==='dhuhr'||n==='dhur'||n==='zuhr'||n==='zuhur'?'Dhuhr'
                   : n==='asr'?'Asr': n==='maghrib'?'Maghrib': n==='isha'?'Isha': s.label;
+
+      const isNext = i===nextIdx;
+      const timeHTML = s.jumuah ? s.today : displayHHMM(s.today);
+      const cdHTML = isNext ? `<div class="inlinecd" id="inlineCD">T---:--:--</div>` : '';
+
       const el=document.createElement('div');
-      el.className='row'+(i===nextIdx?' next':'');
+      el.className='row'+(isNext?' next':'');
       el.innerHTML = `<div class="name">${left}</div>
-                      <div class="time">${s.jumuah ? s.today : displayHHMM(s.today)}</div>
+                      <div class="time">${timeHTML}${cdHTML}</div>
                       <div class="tomorrow">${s.jumuah ? s.tomorrow : displayHHMM(s.tomorrow)}</div>`;
       rowsEl.appendChild(el);
     });
 
-    const nextLabel=document.getElementById('nextLabel');
-    const hEl=document.getElementById('cdHours'), mEl=document.getElementById('cdMins'), sEl=document.getElementById('cdSecs');
-    if(nextIdx<0 || !nextTime){ nextLabel.textContent='—'; hEl.textContent='--'; mEl.textContent='--'; sEl.textContent='--'; return; }
-    nextLabel.textContent = parsed[nextIdx].label + ' at ' + (parsed[nextIdx].jumuah ? String(parsed[nextIdx].today).split('·')[0].trim() : displayHHMM(parsed[nextIdx].today));
-    function tickCD(){
-      let diff=Math.max(0, Math.floor((nextTime - new Date())/1000));
-      const h=Math.floor(diff/3600), m=Math.floor((diff%3600)/60), s=diff%60;
-      hEl.textContent=String(h).padStart(2,'0'); mEl.textContent=String(m).padStart(2,'0'); sEl.textContent=String(s).padStart(2,'0');
+    // Start / update countdown for the next prayer (inline)
+    if(nextTime){
+      startCountdown(nextTime);
+    }else{
+      if(cdTimer) clearInterval(cdTimer);
+      const el = document.getElementById('inlineCD');
+      if(el) el.textContent = 'T---:--:--';
     }
-    tickCD(); setInterval(tickCD,1000);
   }
 
   function loadFromText(csvText, name='(pasted)'){
