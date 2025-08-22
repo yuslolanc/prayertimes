@@ -231,13 +231,13 @@
       const t1 = hJ1 ? todayRow.row[hJ1] : '';
       const t2 = hJ2 ? todayRow.row[hJ2] : '';
       const combined = fmtPair(t1,t2);
-      if(combined) slots.push({label:'JUMUAH 1/2', today:combined, tomorrow:'', jumuah:true});
+      if(combined) slots.push({label:'Jummah 1st/2nd', today:combined, tomorrow:'', jumuah:true});
     }
     if(isFriTomorrow && (hJ1 || hJ2)){
       const t1 = hJ1 && tomorrowRow ? tomorrowRow.row[hJ1] : '';
       const t2 = hJ2 && tomorrowRow ? tomorrowRow.row[hJ2] : '';
       const combined = fmtPair(t1,t2);
-      if(combined) slots.push({label:'JUMUAH 1/2', today:'', tomorrow:combined, jumuah:true});
+      if(combined) slots.push({label:'Jummah 1st/2nd', today:'', tomorrow:combined, jumuah:true});
     }
 
     let nextIdx=-1, nextTime=null;
@@ -269,7 +269,7 @@
                       <div class="time">${left}</div>
                       <div class="tomorrow">${right}</div>`;
       rowsEl.appendChild(el);
-      if(s.label==='JUMUAH 1/2' && (s.today || s.tomorrow)){
+      if(s.label==='Jummah 1st/2nd' && (s.today || s.tomorrow)){
         const note=document.createElement('div');
         note.className='row note';
         note.innerHTML = '&ldquo;Please arrive early for Jumu&#39;ah to benefit from the Imam&#39;s talk before the Khutbah.&rdquo;';
