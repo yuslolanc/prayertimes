@@ -27,7 +27,7 @@
     font-size: 42px;
     font-weight: 900;
     letter-spacing: 2px;
-    width: 148px;           /* ~133% of 112px logo */
+    width: 148px;
     max-width: 90%;
   }
 
@@ -83,6 +83,13 @@
     color:#bfdbfe;
     opacity:.95;
   }
+
+  /* File picker button */
+  .picker{
+    display:inline-flex; align-items:center; gap:10px; padding:10px 14px; border-radius:12px;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); cursor:pointer; font-weight:700;
+  }
+  .picker input{ display:none; }
 </style>
 </head>
 <body>
@@ -112,7 +119,13 @@
       <div class="rows" id="rows"></div>
     </div>
 
-    <div id="status" style="min-width:260px; text-align:right; color:var(--muted);"></div>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div id="status" style="min-width:260px; color:var(--muted);"></div>
+      <label class="picker">
+        <span>Load CSV</span>
+        <input type="file" id="csvPick" accept=".csv,text/csv">
+      </label>
+    </div>
 
     <!-- WhatsApp Channel Card (static banner) -->
     <div class="card" style="padding:20px; display:flex; justify-content:center; align-items:center;">
@@ -134,8 +147,9 @@
   const datechip = document.getElementById('datechip');
   const statusEl = document.getElementById('status');
   const clockEl  = document.getElementById('clockNow');
+  const pickEl   = document.getElementById('csvPick');
 
-  const norm = s => (s||'').toLowerCase().replace(/[\s_\\-]/g,'').trim();
+  const norm = s => (s||'').toLowerCase().replace(/[\\s_\\-]/g,'').trim();
   const isDhuhr = s => ['dhuhr','dhur','zuhr','zuhur','duhr'].includes(norm(s));
 
   let cdTimer = null;         // countdown interval
@@ -421,11 +435,19 @@
   function loadFromText(csvText, name='(pasted)'){
     try{
       const {headers,data}=parseCSV(csvText);
-      if(!headers.length || !data.length){ statusEl.textContent='CSV empty.'; return; }
+      if(!headers.length || !data.length){
+        const first = (csvText||'').slice(0,120).replace(/\\n/g,' \\n ');
+        statusEl.textContent = `CSV empty. Bytes=${(csvText||'').length}. Preview: ${first}`;
+        return;
+      }
       const today  = getRowForOffset(data, headers, 0);
       const tomorrow = getRowForOffset(data, headers, 1);
-      if(!today){ const dc=findDateCol(headers); const sample=data.slice(0,5).map(r=>r[dc]).join(' | ');
-        statusEl.innerHTML=`<span style="color:#fca5a5">Could not match today.</span> Samples: ${sample}`; return; }
+      if(!today){
+        const dc=findDateCol(headers);
+        const sample=data.slice(0,5).map(r=>r[dc]).join(' | ');
+        statusEl.innerHTML=`<span style="color:#fca5a5">Could not match today.</span> Samples: ${sample}`;
+        return;
+      }
       statusEl.textContent=`Loaded ${name} (${data.length} rows)`;
       render(today, tomorrow, headers);
       localStorage.setItem(STORAGE_KEY,csvText);
@@ -439,11 +461,16 @@
       const resp = await fetch(AUTO_FILE + '?t=' + Date.now(), {cache:'no-store'});
       if(!resp.ok) throw new Error('HTTP '+resp.status);
       const t = await resp.text();
-      statusEl.textContent='Loaded prayertime.csv from server';
+      if(!t.trim()){
+        statusEl.textContent='CSV fetched but was empty (0 bytes).';
+      }else{
+        statusEl.textContent='Loaded prayertime.csv from server';
+      }
       loadFromText(t,'prayertime.csv');
       return true;
     }catch(e){
       console.warn('Fetch failed, will use cached if available', e);
+      statusEl.textContent='Fetch failed; using cache if present.';
       return false;
     }
   }
@@ -457,9 +484,19 @@
       loadFromText(cached,name);
     }
     if(!ok && !cached){
-      statusEl.textContent='Waiting for CSV…';
+      statusEl.textContent='Waiting for CSV… Use “Load CSV” to pick a local file.';
     }
   })();
+
+  // Manual picker fallback
+  if(pickEl){
+    pickEl.addEventListener('change', async (e)=>{
+      const f = e.target.files && e.target.files[0];
+      if(!f) return;
+      const t = await f.text();
+      loadFromText(t, f.name);
+    });
+  }
 
   function msToMidnight(){ const n=new Date(); const x=new Date(n); x.setHours(24,0,0,0); return x-n; }
   setTimeout(()=>location.reload(), msToMidnight()+5000);
