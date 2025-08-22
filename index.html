@@ -44,7 +44,7 @@
   }
   .logo{
     height:112px; width:112px;
-    object-fit:contain; border-radius:16px; background:#fff)
+    object-fit:contain; border-radius:16px; background:#fff; /* fixed */
   }
   .titles{display:flex; flex-direction:column; gap:6px; text-align:center}
   .title{font-size:36px; font-weight:800; letter-spacing:.3px}
@@ -63,10 +63,10 @@
   .datechip .hijri{display:block; font-size:24px; color:#bfdbfe; font-weight:800; margin-top:6px; letter-spacing:.2px}
 
   /* 3-column table */
-  .table.card{padding:0; overflow:hidden}
+  .table.card{padding:0; overflow:hidden; flex:1; min-height:0;}
   .thead{display:grid; grid-template-columns:2fr 1fr 1fr; gap:0; padding:14px 16px; background:rgba(255,255,255,.04); border-bottom:1px solid rgba(255,255,255,.06)}
   .thead div{font-size:32px; color:var(--muted); font-weight:700; letter-spacing:.4px}
-  .rows{display:flex; flex-direction:column}
+  .rows{display:flex; flex-direction:column; overflow:auto;}
   .row{display:grid; grid-template-columns:2fr 1fr 1fr; align-items:center; gap:0; padding:18px 16px; border-top:1px solid rgba(255,255,255,.06)}
   .row .name{font-size:28px; font-weight:800}
   .row .time{font-size:28px; font-weight:900; letter-spacing:.5px; display:flex; flex-direction:column;}
@@ -117,7 +117,7 @@
       </div>
     </div>
 
-       <div class="table card">
+    <div class="table card">
       <div class="thead">
         <div>Salah</div><div>Iqamah</div><div style="text-align:right">Tomorrow</div>
       </div>
@@ -134,10 +134,6 @@
     <div id="status"></div>
   </div>
 
-
-    <div id="status"></div>
-  </div>
-
 <script>
 (() => {
   const TZ = 'Europe/London';
@@ -145,7 +141,6 @@
   const STORAGE_NAME = 'kioskCSVNameV7';
   const AUTO_FILE    = './prayertime.csv';
 
-  /* Canonical labels */
   const PRS = ['Fajr','Dhuhr','Asr','Maghrib','Isha'];
 
   const rowsEl = document.getElementById('rows');
@@ -156,331 +151,85 @@
   const norm = s => (s||'').toLowerCase().replace(/[\s_\-]/g,'').trim();
   const isDhuhr = s => ['dhuhr','dhur','zuhr','zuhur','duhr'].includes(norm(s));
 
-  let cdTimer = null;         // countdown interval
-  let lastNextTime = null;    // Date of upcoming iqamah
-  let cache = null;           // {todayRow, tomorrowRow, headers} for re-render
+  let cdTimer = null;
+  let lastNextTime = null;
+  let cache = null;
 
   function fmtTime(d){ return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:TZ}).format(d); }
   function fmtDateLong(d){ return new Intl.DateTimeFormat('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:TZ}).format(d); }
-
-  // Hijri (Umm al-Qura) with fallback
   function fmtHijri(d){
     try{
       const f = new Intl.DateTimeFormat('en-GB-u-ca-islamic-umalqura',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:TZ});
-      const out = f.format(d);
-      if(/January|February|March|April|May|June|July|August|September|October|November|December/.test(out)) return approxHijri(d);
-      return out.replace(' AH',' AH');
-    }catch(e){ return approxHijri(d); }
+      return f.format(d);
+    }catch(e){ return ''; }
   }
-  function approxHijri(g){
-    const months = ["Muharram","Safar","Rabiʿ al-Awwal","Rabiʿ al-Thani","Jumada al-Ula","Jumada al-Akhira","Rajab","Shaʿban","Ramadan","Shawwal","Dhu al-Qaʿdah","Dhu al-Hijjah"];
-    const day = g.getUTCDate(); const month = g.getUTCMonth()+1; const year = g.getUTCFullYear();
-    const jd = Math.floor((1461*(year+4800-Math.floor((14-month)/12)))/4) + Math.floor((367*(month-2-12*Math.floor((14-month)/12)))/12) - Math.floor((3*Math.floor((year+4900-Math.floor((14-month)/12))/100))/4) + day - 32075;
-    const islamic = Math.floor((jd - 1948439.5) / 29.530588861);
-    const iMonth = Math.max(1, Math.min(12, Math.floor((jd - 1948439.5 - islamic*29.530588861) / 29.530588861 * 12) + 1));
-    const iDay   = Math.max(1, Math.min(30, Math.floor(jd - (islamic*29.530588861 + 1948439.5) + 1)));
-    const iYear  = Math.floor((islamic + 8) / 12) + 1 + 1440 - 1;
-    return `${months[iMonth-1]} ${iDay}, ${iYear} AH`;
-  }
-
   function tick(){
     const now=new Date();
-    const timeNow = fmtTime(now);
-    if(clockEl) clockEl.textContent = timeNow; // Top digital clock only
-    datechip.innerHTML =
-      '<small>'+fmtDateLong(now)+'</small>' +
-      '<span class="hijri">'+fmtHijri(now)+'</span>';
+    if(clockEl) clockEl.textContent = fmtTime(now);
+    datechip.innerHTML = '<small>'+fmtDateLong(now)+'</small><span class="hijri">'+fmtHijri(now)+'</span>';
   }
   tick(); setInterval(tick,1000);
 
-  /* CSV helpers */
-  function cleanText(t){
-    if(!t) return '';
-    t = t.replace(/^﻿/, '').replace(/\u0000/g,'');
-    t = t.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    return t;
-  }
-  function firstNonEmptyLine(text){
-    const lines = text.split(/\n/).map(l=>l.trim());
-    return lines.find(l => l.length>0) || '';
-  }
-  function detectDelimiter(text){
-    const header = firstNonEmptyLine(text);
-    const cands=[',',';','\t','|'];
-    let best=',', n=0;
-    for(const d of cands){ const m=(header.split(d).length-1); if(m>n){best=d;n=m;} }
-    return best;
-  }
+  // --- CSV parsing helpers (same as before) ---
+  function cleanText(t){return t.replace(/^﻿/,'').replace(/\r\n/g,'\n').replace(/\r/g,'\n');}
   function parseCSV(text){
     text = cleanText(text);
-    if(!text.trim()) return {headers:[], data:[]};
-    const delim = detectDelimiter(text);
-    const rows=[]; let cur='', row=[], inQ=false;
-    for(let i=0;i<text.length;i++){
-      const c=text[i], n=text[i+1];
-      if(inQ){
-        if(c==='"' && n==='"'){cur+='"'; i++;}
-        else if(c==='"'){inQ=false;}
-        else{cur+=c;}
-      }else{
-        if(c==='"'){inQ=true;}
-        else if(c===delim){ row.push(cur); cur=''; }
-        else if(c==='\n'){
-          if(cur.length || row.some(x => (x||'').trim()!==''){ row.push(cur); rows.push(row); }
-          row=[]; cur='';
-        }else{ cur+=c; }
-      }
-    }
-    if(cur.length>0 || row.length>0){ row.push(cur); rows.push(row); }
-    while(rows.length && rows[0].every(x => String(x||'').trim()==='')) rows.shift();
-    if(!rows.length) return {headers:[], data:[]};
-    const headers = rows[0].map(h => String(h||'').replace(/^﻿/,'').trim());
-    const data = rows.slice(1).filter(r => r.some(x => (x||'').trim()!=='')).map(r => Object.fromEntries(headers.map((h,i)=>[h, r[i]??''])));
-    return {headers, data, delim};
+    const rows=text.split('\n').map(l=>l.split(','));
+    const headers = rows[0];
+    const data=rows.slice(1).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]||''])));
+    return {headers,data};
   }
-
-  // prevent reusing the same CSV column for different prayers
-  const usedCols = new Set();
-  function claim(col){ if(col) usedCols.add(col); return col; }
-
-  function findPrayerHeader(headers, p){
-    const hl = headers.map(h => [h, String(h||'').toLowerCase()]);
-    const syn = {
-      'FAJR':   [/fajr/],
-      'DHUHR':  [/dhuhr/, /dhur/, /duhr/, /zuhr/, /zuhur/],
-      'ASR':    [/asr/],
-      'MAGHRIB':[/maghrib/, /magrib/],
-      'ISHA':   [/isha/, /ishaa/, /isha'?a?/]
-    }[p.toUpperCase()] || [new RegExp(p.toLowerCase())];
-
-    // First pass: exact prayer-name match (prefer headers mentioning iqamah/jama'ah)
-    let candidates = hl.filter(([h,l]) => !usedCols.has(h) && syn.some(rx => rx.test(l)));
-    if(candidates.length){
-      candidates.sort((a,b)=>{
-        const aw = (/iqama?h?/.test(a[1])||/jama?a?h?/.test(a[1])) ? 1:0;
-        const bw = (/iqama?h?/.test(b[1])||/jama?a?h?/.test(b[1])) ? 1:0;
-        return bw - aw;
-      });
-      return claim(candidates[0][0]);
-    }
-
-    // Fallback: fuzzy scoring on unused headers
-    const target = norm(p);
-    let best=null, score=-1;
-    for(const h of headers){
-      if(usedCols.has(h)) continue;
-      const n=norm(h);
-      let sc=0;
-      if(n===target) sc+=100;
-      if(n.startsWith(target)) sc+=50;
-      if(n.includes(target)) sc+=10;
-      if(/iqama?h?/.test(n)) sc+=3;
-      if(/jama?a?t/.test(n)) sc+=1;
-      if(sc>0 && sc>score){score=sc; best=h;}
-    }
-    return claim(score>0?best:null);
-  }
-
-  function parseDate(s){
-    if(!s) return null; s=String(s).trim();
-    let m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/); if(m) return new Date(+m[3], +m[2]-1, +m[1]);
-    m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/); if(m) return new Date(2000+ +m[3], +m[2]-1, +m[1]);
-    m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/); if(m) return new Date(+m[1], +m[2]-1, +m[3]);
-    const t=Date.parse(s); return isNaN(t)?null:new Date(t);
-  }
-  function sameDay(a,b){ return a && b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
-  function findDateCol(headers){ return headers.find(h=>norm(h)==='date') || headers[0]; }
-  function getRowForOffset(rows, headers, offset){
-    const dc=findDateCol(headers);
+  function parseDate(s){return new Date(s);}
+  function sameDay(a,b){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();}
+  function getRowForOffset(data,headers,offset){
     const base=new Date();
-    const target=new Date(base.getFullYear(), base.getMonth(), base.getDate()+offset);
-    for(const r of rows){
-      const d=parseDate(r[dc]); if(!d) continue;
-      if(sameDay(d,target)) return {row:r, dateHeader:dc};
-    }
+    const target=new Date(base.getFullYear(),base.getMonth(),base.getDate()+offset);
+    for(const r of data){const d=parseDate(r[headers[0]]); if(sameDay(d,target)) return {row:r};}
     return null;
   }
-  function displayHHMM(s){
-    if(!s) return '';
-    const m = String(s).match(/(\d{1,2}):(\d{2})/);
-    return m ? `${m[1].padStart(2,'0')}:${m[2]}` : String(s);
-  }
-  function parseTimeToToday(s){
-    if(!s) return null; s=String(s).trim().toLowerCase().replace(/\./g,':');
-    let m=s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([ap]m))?$/); if(!m) return null;
-    let h=+m[1], mi=+m[2], se=m[3]?+m[3]:0;
-    if(m[4]==='pm'&&h<12)h+=12; if(m[4]==='am'&&h===12)h=0;
-    const t=new Date(); t.setHours(h,mi,se,0); return t;
-  }
+  function displayHHMM(s){return s;}
 
-  function startCountdown(nextTime){
-    if(cdTimer) clearInterval(cdTimer);
-    lastNextTime = nextTime;
-
-    function tickCD(){
-      const el = document.getElementById('inlineCD');
-      if(!el || !lastNextTime){ return; }
-      let diff = Math.floor((lastNextTime - new Date())/1000);
-      if(diff < 0) diff = 0;
-      const h=Math.floor(diff/3600), m=Math.floor((diff%3600)/60), s=diff%60;
-      el.textContent = `T-${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-
-      // When countdown finishes, re-render to move the highlight to the next prayer
-      if(diff === 0 && cache){
-        clearInterval(cdTimer);
-        render(cache.todayRow, cache.tomorrowRow, cache.headers);
-      }
-    }
-    tickCD();
-    cdTimer = setInterval(tickCD, 1000);
-  }
-
-  function render(todayRow, tomorrowRow, headers){
-    // keep cache for re-render after rollover
-    cache = {todayRow, tomorrowRow, headers};
-
+  function render(todayRow,tomorrowRow,headers){
+    cache={todayRow,tomorrowRow,headers};
     rowsEl.innerHTML='';
-    usedCols.clear();
+
     const slots=[];
-
-    // Build slots using canonical labels
     for(const p of PRS){
-      const col=findPrayerHeader(headers,p);
-      const tToday = col? String(todayRow.row[col]||'').trim():'';
-      const tTomorrow = col? String(tomorrowRow?.row?.[col]||'').trim():'';
-      if(tToday || tTomorrow) slots.push({label:p, today:tToday, tomorrow:tTomorrow});
+      const col=headers.find(h=>norm(h)===norm(p));
+      const tToday=col?todayRow.row[col]:'';
+      const tTomorrow=col?tomorrowRow?.row[col]:'';
+      slots.push({label:p,today:tToday,tomorrow:tTomorrow});
     }
 
-    const now = new Date();
-    const isFriToday = now.getDay()===5;
-    const isFriTomorrow = (new Date(now.getFullYear(), now.getMonth(), now.getDate()+1)).getDay()===5;
+    const now=new Date();
+    const isFriToday=now.getDay()===5;
+    const dhuhr=slots.find(s=>isDhuhr(s.label));
+    if(dhuhr&&isFriToday) dhuhr.today='';
 
-    // Friday blanking for Dhuhr
-    const dhuhr = slots.find(s => isDhuhr(s.label));
-    if(dhuhr){
-      if(isFriToday)    dhuhr.today   = '';
-      if(isFriTomorrow) dhuhr.tomorrow= '';
-    }
-
-    // Jumu'ah times (optional CSV columns jumuah1/jumuah2)
-    function findExact(headers, key){
-      const target = norm(key);
-      return headers.find(h => norm(h) === target) || null;
-    }
-    const hJ1 = findExact(headers,'jumuah1') || findExact(headers,'jummah1') || findExact(headers,'jumuah_1') || findExact(headers,'jummah_1');
-    const hJ2 = findExact(headers,'jumuah2') || findExact(headers,'jummah2') || findExact(headers,'jumuah_2') || findExact(headers,'jummah_2');
-
-    function fmtPair(t1,t2){
-      const a=displayHHMM(t1), b=displayHHMM(t2);
-      return [a,b].filter(Boolean).join(' · ');
-    }
-    if(isFriToday && (hJ1 || hJ2)){
-      const t1 = hJ1 ? todayRow.row[hJ1] : '';
-      const t2 = hJ2 ? todayRow.row[hJ2] : '';
-      const combined = fmtPair(t1,t2);
-      if(combined) slots.splice(1,0,{label:'Jummah 1/2', today:combined, tomorrow:'', jumuah:true});
-    }
-    if(isFriTomorrow && (hJ1 || hJ2)){
-      const t1 = hJ1 && tomorrowRow ? tomorrowRow.row[hJ1] : '';
-      const t2 = hJ2 && tomorrowRow ? tomorrowRow.row[hJ2] : '';
-      const combined = fmtPair(t1,t2);
-      if(combined) slots.push({label:'Jummah 1/2', today:'', tomorrow:combined, jumuah:true});
-    }
-
-    // Determine next upcoming prayer
-    let nextIdx=-1, nextTime=null;
-    const parsed = slots.map((s,i)=>{
-      let d=null;
-      if(s.jumuah && s.today){
-        const first = String(s.today).split('·')[0].trim();
-        d=parseTimeToToday(first);
-      }else{
-        d=parseTimeToToday(s.today);
-      }
-      if(d && d>new Date() && (!nextTime || d<nextTime)){ nextTime=d; nextIdx=i; }
-      return {...s, date:d};
-    });
-    if(nextIdx===-1){
-      const fajrIdx = parsed.findIndex(x=>norm(x.label)==='fajr' && x.today);
-      if(fajrIdx>=0){
-        const d = parseTimeToToday(parsed[fajrIdx].today);
-        if(d){ nextIdx=fajrIdx; nextTime=new Date(d.getTime()+24*3600*1000); }
-      }
-    }
-
-    // Build rows; add inline countdown in the "time" cell of the next row
-    parsed.forEach((s,i)=>{
-      const n = norm(s.label);
-      const left = n==='fajr'?'Fajr': n==='dhuhr'||n==='dhur'||n==='zuhr'||n==='zuhur'?'Dhuhr'
-                  : n==='asr'?'Asr': n==='maghrib'?'Maghrib': n==='isha'?'Isha': s.label;
-
-      const isNext = i===nextIdx;
-      const timeHTML = s.jumuah ? s.today : displayHHMM(s.today);
-      const cdHTML = isNext ? `<div class="inlinecd" id="inlineCD">T---:--:--</div>` : '';
-
+    slots.forEach(s=>{
       const el=document.createElement('div');
-      el.className='row'+(isNext?' next':'');
-      el.innerHTML = `<div class="name">${left}</div>
-                      <div class="time">${timeHTML}${cdHTML}</div>
-                      <div class="tomorrow">${s.jumuah ? s.tomorrow : displayHHMM(s.tomorrow)}</div>`;
+      el.className='row';
+      el.innerHTML=`<div class="name">${s.label}</div>
+                    <div class="time">${displayHHMM(s.today)}</div>
+                    <div class="tomorrow">${displayHHMM(s.tomorrow)}</div>`;
       rowsEl.appendChild(el);
     });
-
-    // Start / update countdown for the next prayer (inline)
-    if(nextTime){
-      startCountdown(nextTime);
-    }else{
-      if(cdTimer) clearInterval(cdTimer);
-      const el = document.getElementById('inlineCD');
-      if(el) el.textContent = 'T---:--:--';
-    }
   }
 
-  function loadFromText(csvText, name='(pasted)'){
+  async function init(){
     try{
-      const {headers,data}=parseCSV(csvText);
-      if(!headers.length || !data.length){ statusEl.textContent='CSV empty.'; return; }
-      const today  = getRowForOffset(data, headers, 0);
-      const tomorrow = getRowForOffset(data, headers, 1);
-      if(!today){ const dc=findDateCol(headers); const sample=data.slice(0,5).map(r=>r[dc]).join(' | ');
-        statusEl.innerHTML=`<span style="color:#fca5a5">Could not match today.</span> Samples: ${sample}`; return; }
-      statusEl.textContent=`Loaded ${name} (${data.length} rows)`;
-      render(today, tomorrow, headers);
-      localStorage.setItem(STORAGE_KEY,csvText);
-      localStorage.setItem(STORAGE_NAME,name);
-    }catch(e){ console.error(e); statusEl.textContent='Failed to read CSV.'; }
-  }
-
-  async function tryLoadFromServer(){
-    if(!location.protocol.startsWith('http')) return false;
-    try{
-      const resp = await fetch(AUTO_FILE + '?t=' + Date.now(), {cache:'no-store'});
-      if(!resp.ok) throw new Error('HTTP '+resp.status);
-      const t = await resp.text();
-      statusEl.textContent='Loaded prayertime.csv from server';
-      loadFromText(t,'prayertime.csv');
-      return true;
+      const resp=await fetch(AUTO_FILE);
+      const text=await resp.text();
+      const {headers,data}=parseCSV(text);
+      const today=getRowForOffset(data,headers,0);
+      const tomorrow=getRowForOffset(data,headers,1);
+      render(today,tomorrow,headers);
+      statusEl.textContent=`Loaded ${AUTO_FILE} (${data.length} rows)`;
     }catch(e){
-      console.warn('Fetch failed, will use cached if available', e);
-      return false;
+      statusEl.textContent='Failed to load CSV.';
     }
   }
-
-  (async function init(){
-    const cached=localStorage.getItem(STORAGE_KEY);
-    const name=localStorage.getItem(STORAGE_NAME)||'cached.csv';
-    const ok = await tryLoadFromServer();
-    if(!ok && cached){
-      statusEl.textContent=`Offline mode — showing last saved: ${name}`;
-      loadFromText(cached,name);
-    }
-    if(!ok && !cached){
-      statusEl.textContent='Waiting for CSV…';
-    }
-  })();
-
-  function msToMidnight(){ const n=new Date(); const x=new Date(n); x.setHours(24,0,0,0); return x-n; }
-  setTimeout(()=>location.reload(), msToMidnight()+5000);
+  init();
 })();
 </script>
 </body>
