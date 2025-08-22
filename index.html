@@ -27,7 +27,7 @@
     font-size: 42px;
     font-weight: 900;
     letter-spacing: 2px;
-    width: 148px;
+    width: 148px;           /* ~133% of 112px logo */
     max-width: 90%;
   }
 
@@ -56,12 +56,13 @@
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     padding:18px 24px; border-radius:18px; background:var(--panel);
     border:1px solid rgba(255,255,255,.08); min-width:360px; text-align:center;
-    font-weight:800; font-size:30px; line-height:1.2;
+    font-weight:800; font-size:30px;
+    line-height:1.2;
   }
   .datechip small{display:block; font-size:27px; color:var(--muted); font-weight:700; margin-top:2px}
   .datechip .hijri{display:block; font-size:24px; color:#bfdbfe; font-weight:800; margin-top:6px; letter-spacing:.2px}
 
-  /* Table */
+  /* 3-column table */
   .table.card{padding:0; overflow:hidden}
   .thead{display:grid; grid-template-columns:2fr 1fr 1fr; gap:0; padding:14px 16px; background:rgba(255,255,255,.04); border-bottom:1px solid rgba(255,255,255,.06)}
   .thead div{font-size:32px; color:var(--muted); font-weight:700; letter-spacing:.4px}
@@ -72,35 +73,15 @@
   .row .tomorrow{justify-self:end; font-weight:900; font-size:22px; color:#bfdbfe}
   .row.next{position:relative; background:linear-gradient(90deg, rgba(59,130,246,.08), rgba(255,255,255,0));}
   .row.next::after{content:''; position:absolute; inset:0; outline:3px solid var(--accent); border-radius:14px; opacity:.35; pointer-events:none}
-  .inlinecd{ margin-top:6px; font-size:14px; font-weight:800; letter-spacing:.5px; color:#bfdbfe; opacity:.95;}
 
-  /* WhatsApp CTA card */
-  .cta.card{
-    display:grid; gap:16px; align-items:center; padding:16px 18px;
-    grid-template-columns: 1fr auto;
-  }
-  .ctaHeader{display:flex; align-items:center; gap:12px}
-  .waLogo{width:28px; height:28px; display:block}
-  .cta h3{margin:0 0 6px 0; font-size:20px; font-weight:900; letter-spacing:.3px}
-  .cta p{margin:0; font-size:14px; color:var(--muted)}
-  .cta .actions{margin-top:10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap}
-  .btn{
-    display:inline-flex; align-items:center; gap:8px; padding:10px 14px;
-    border-radius:12px; border:1px solid rgba(255,255,255,.1); background:rgba(59,130,246,.12);
-    color:#eaf2ff; text-decoration:none; font-weight:800; font-size:14px;
-  }
-  .btn:hover{background:rgba(59,130,246,.18)}
-  .qrwrap{
-    justify-self:end; display:grid; place-items:center;
-    padding:12px; border-radius:14px;
-    background:white;   /* white inner card */
-    border:2px solid rgba(0,0,0,.2);
-  }
-  .qrwrap .qr{width:168px; height:168px; display:block}
-  .qrwrap small{margin-top:6px; color:#0a0f0f; font-weight:800}
-  @media (max-width: 480px) {
-    .cta.card{grid-template-columns:1fr}
-    .qrwrap{justify-self:start}
+  /* Inline countdown (only shows on the highlighted row) */
+  .inlinecd{
+    margin-top:6px;
+    font-size:14px;
+    font-weight:800;
+    letter-spacing:.5px;
+    color:#bfdbfe;
+    opacity:.95;
   }
 </style>
 </head>
@@ -111,7 +92,7 @@
     <div id="clockNow">--:--</div>
 
     <div class="header card">
-      <div></div>
+      <div></div> <!-- left spacer -->
       <div class="center">
         <img class="logo" src="./logo.png" alt="Logo" onerror="this.style.display='none'"/>
         <div class="titles">
@@ -131,31 +112,6 @@
       <div class="rows" id="rows"></div>
     </div>
 
-    <!-- WhatsApp Channel CTA -->
-    <div class="cta card">
-      <div>
-        <div class="ctaHeader">
-          <!-- WhatsApp logo -->
-          <svg class="waLogo" viewBox="0 0 24 24" aria-hidden="true">
-            <path fill="#25D366" d="M12.04 0C5.42 0 .04 5.38.04 12c0 2.1.54 4.14 1.61 5.95L0 24l6.41-1.67A11.96 11.96 0 0 0 12.04 24C18.66 24 24 18.62 24 12S18.66 0 12.04 0z"/>
-            <path fill="#FFF" d="M19.5 14.08c-.07.2-.35 1.02-1.3 1.62-.68.43-1.55.6-2.58.37-1.84-.41-4.06-1.94-5.37-3.83-1.2-1.74-1.38-3.2-1.25-4.06.08-.55.55-1.28.96-1.6.28-.22.6-.2.77-.17.2.04.5.18.77.9.1.26.25.6.35.83.18.4.04.65-.08.84-.12.18-.27.4-.41.57-.13.18-.27.37-.11.67.17.31.73 1.2 1.58 1.95 1.1.95 1.98 1.26 2.32 1.4.35.14.56.12.75-.07.2-.2.85-.99 1.07-1.33.22-.33.45-.28.75-.16.3.11 1.94.91 2.28 1.08.34.17.56.25.65.4.08.16.08.36 0 .51z"/>
-          </svg>
-          <h3 style="margin:0">Join our WhatsApp Channel</h3>
-        </div>
-        <p>Stay up to date with the latest events, announcements, and news from Masjid al Noor.</p>
-        <div class="actions">
-          <a class="btn" id="waBtn" href="#" target="_blank" rel="noopener">
-            Join Channel
-          </a>
-          <span style="font-size:13px; color:#aab4bf; user-select:all" id="waUrlText"></span>
-        </div>
-      </div>
-      <div class="qrwrap">
-        <div id="waQR" class="qr" aria-label="WhatsApp Channel QR"></div>
-        <small>Scan to join</small>
-      </div>
-    </div>
-
     <div id="status" style="min-width:260px; text-align:right; color:var(--muted);"></div>
   </div>
 
@@ -165,7 +121,6 @@
   const STORAGE_KEY  = 'kioskCSVTextV7';
   const STORAGE_NAME = 'kioskCSVNameV7';
   const AUTO_FILE    = './prayertime.csv';
-  const WA_URL = 'https://www.whatsapp.com/channel/0029Vb6qOgq9MF8xjuiinL1f';
 
   /* Canonical labels */
   const PRS = ['Fajr','Dhuhr','Asr','Maghrib','Isha'];
@@ -175,17 +130,12 @@
   const statusEl = document.getElementById('status');
   const clockEl  = document.getElementById('clockNow');
 
-  /* WhatsApp CTA setup */
-  const waBtn = document.getElementById('waBtn');
-  const waQR  = document.getElementById('waQR');
-  const waUrlText = document.getElementById('waUrlText');
-  if(waBtn){ waBtn.href = WA_URL; }
-  if(waUrlText){ waUrlText.textContent = WA_URL; }
-
   const norm = s => (s||'').toLowerCase().replace(/[\s_\-]/g,'').trim();
   const isDhuhr = s => ['dhuhr','dhur','zuhr','zuhur','duhr'].includes(norm(s));
 
-  let cdTimer = null, lastNextTime = null, cache = null;
+  let cdTimer = null;         // countdown interval
+  let lastNextTime = null;    // Date of upcoming iqamah
+  let cache = null;           // {todayRow, tomorrowRow, headers} for re-render
 
   function fmtTime(d){ return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:TZ}).format(d); }
   function fmtDateLong(d){ return new Intl.DateTimeFormat('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:TZ}).format(d); }
@@ -207,13 +157,13 @@
     const iMonth = Math.max(1, Math.min(12, Math.floor((jd - 1948439.5 - islamic*29.530588861) / 29.530588861 * 12) + 1));
     const iDay   = Math.max(1, Math.min(30, Math.floor(jd - (islamic*29.530588861 + 1948439.5) + 1)));
     const iYear  = Math.floor((islamic + 8) / 12) + 1 + 1440 - 1;
-    return \`\${months[iMonth-1]} \${iDay}, \${iYear} AH\`;
+    return `${months[iMonth-1]} ${iDay}, ${iYear} AH`;
   }
 
   function tick(){
     const now=new Date();
     const timeNow = fmtTime(now);
-    if(clockEl) clockEl.textContent = timeNow;
+    if(clockEl) clockEl.textContent = timeNow; // Top digital clock only
     datechip.innerHTML =
       '<small>'+fmtDateLong(now)+'</small>' +
       '<span class="hijri">'+fmtHijri(now)+'</span>';
@@ -223,17 +173,17 @@
   /* CSV helpers */
   function cleanText(t){
     if(!t) return '';
-    t = t.replace(/^﻿/, '').replace(/\\u0000/g,'');
-    t = t.replace(/\\r\\n/g, '\\n').replace(/\\r/g, '\\n');
+    t = t.replace(/^﻿/, '').replace(/\u0000/g,'');
+    t = t.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     return t;
   }
   function firstNonEmptyLine(text){
-    const lines = text.split(/\\n/).map(l=>l.trim());
+    const lines = text.split(/\n/).map(l=>l.trim());
     return lines.find(l => l.length>0) || '';
   }
   function detectDelimiter(text){
     const header = firstNonEmptyLine(text);
-    const cands=[',',';','\\t','|'];
+    const cands=[',',';','\t','|'];
     let best=',', n=0;
     for(const d of cands){ const m=(header.split(d).length-1); if(m>n){best=d;n=m;} }
     return best;
@@ -252,7 +202,7 @@
       }else{
         if(c==='"'){inQ=true;}
         else if(c===delim){ row.push(cur); cur=''; }
-        else if(c==='\\n'){
+        else if(c==='\n'){
           if(cur.length || row.some(x => (x||'').trim()!=='')){ row.push(cur); rows.push(row); }
           row=[]; cur='';
         }else{ cur+=c; }
@@ -266,6 +216,7 @@
     return {headers, data, delim};
   }
 
+  // prevent reusing the same CSV column for different prayers
   const usedCols = new Set();
   function claim(col){ if(col) usedCols.add(col); return col; }
 
@@ -279,6 +230,7 @@
       'ISHA':   [/isha/, /ishaa/, /isha'?a?/]
     }[p.toUpperCase()] || [new RegExp(p.toLowerCase())];
 
+    // First pass: exact prayer-name match (prefer headers mentioning iqamah/jama'ah)
     let candidates = hl.filter(([h,l]) => !usedCols.has(h) && syn.some(rx => rx.test(l)));
     if(candidates.length){
       candidates.sort((a,b)=>{
@@ -288,6 +240,8 @@
       });
       return claim(candidates[0][0]);
     }
+
+    // Fallback: fuzzy scoring on unused headers
     const target = norm(p);
     let best=null, score=-1;
     for(const h of headers){
@@ -306,9 +260,9 @@
 
   function parseDate(s){
     if(!s) return null; s=String(s).trim();
-    let m=s.match(/^(\\d{1,2})[\\/\\-](\\d{1,2})[\\/\\-](\\d{4})$/); if(m) return new Date(+m[3], +m[2]-1, +m[1]);
-    m=s.match(/^(\\d{1,2})[\\/\\-](\\d{1,2})[\\/\\-](\\d{2})$/); if(m) return new Date(2000+ +m[3], +m[2]-1, +m[1]);
-    m=s.match(/^(\\d{4})-(\\d{2})-(\\d{2})$/); if(m) return new Date(+m[1], +m[2]-1, +m[3]);
+    let m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/); if(m) return new Date(+m[3], +m[2]-1, +m[1]);
+    m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/); if(m) return new Date(2000+ +m[3], +m[2]-1, +m[1]);
+    m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/); if(m) return new Date(+m[1], +m[2]-1, +m[3]);
     const t=Date.parse(s); return isNaN(t)?null:new Date(t);
   }
   function sameDay(a,b){ return a && b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
@@ -325,12 +279,12 @@
   }
   function displayHHMM(s){
     if(!s) return '';
-    const m = String(s).match(/(\\d{1,2}):(\\d{2})/);
-    return m ? \`\${m[1].padStart(2,'0')}:\${m[2]}\` : String(s);
+    const m = String(s).match(/(\d{1,2}):(\d{2})/);
+    return m ? `${m[1].padStart(2,'0')}:${m[2]}` : String(s);
   }
   function parseTimeToToday(s){
-    if(!s) return null; s=String(s).trim().toLowerCase().replace(/\\./g,':');
-    let m=s.match(/^(\\d{1,2}):(\\d{2})(?::(\\d{2}))?(?:\\s*([ap]m))?$/); if(!m) return null;
+    if(!s) return null; s=String(s).trim().toLowerCase().replace(/\./g,':');
+    let m=s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([ap]m))?$/); if(!m) return null;
     let h=+m[1], mi=+m[2], se=m[3]?+m[3]:0;
     if(m[4]==='pm'&&h<12)h+=12; if(m[4]==='am'&&h===12)h=0;
     const t=new Date(); t.setHours(h,mi,se,0); return t;
@@ -339,13 +293,16 @@
   function startCountdown(nextTime){
     if(cdTimer) clearInterval(cdTimer);
     lastNextTime = nextTime;
+
     function tickCD(){
       const el = document.getElementById('inlineCD');
       if(!el || !lastNextTime){ return; }
       let diff = Math.floor((lastNextTime - new Date())/1000);
       if(diff < 0) diff = 0;
       const h=Math.floor(diff/3600), m=Math.floor((diff%3600)/60), s=diff%60;
-      el.textContent = \`T-\${String(h).padStart(2,'0')}:\${String(m).padStart(2,'0')}:\${String(s).padStart(2,'0')}\`;
+      el.textContent = `T-${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+      // When countdown finishes, re-render to move the highlight to the next prayer
       if(diff === 0 && cache){
         clearInterval(cdTimer);
         render(cache.todayRow, cache.tomorrowRow, cache.headers);
@@ -356,12 +313,14 @@
   }
 
   function render(todayRow, tomorrowRow, headers){
+    // keep cache for re-render after rollover
     cache = {todayRow, tomorrowRow, headers};
 
     rowsEl.innerHTML='';
     usedCols.clear();
     const slots=[];
 
+    // Build slots using canonical labels
     for(const p of PRS){
       const col=findPrayerHeader(headers,p);
       const tToday = col? String(todayRow.row[col]||'').trim():'';
@@ -373,12 +332,14 @@
     const isFriToday = now.getDay()===5;
     const isFriTomorrow = (new Date(now.getFullYear(), now.getMonth(), now.getDate()+1)).getDay()===5;
 
+    // Friday blanking for Dhuhr
     const dhuhr = slots.find(s => isDhuhr(s.label));
     if(dhuhr){
       if(isFriToday)    dhuhr.today   = '';
       if(isFriTomorrow) dhuhr.tomorrow= '';
     }
 
+    // Jumu'ah times (optional CSV columns jumuah1/jumuah2)
     function findExact(headers, key){
       const target = norm(key);
       return headers.find(h => norm(h) === target) || null;
@@ -403,6 +364,7 @@
       if(combined) slots.push({label:'Jummah 1/2', today:'', tomorrow:combined, jumuah:true});
     }
 
+    // Determine next upcoming prayer
     let nextIdx=-1, nextTime=null;
     const parsed = slots.map((s,i)=>{
       let d=null;
@@ -423,6 +385,7 @@
       }
     }
 
+    // Build rows; add inline countdown in the "time" cell of the next row
     parsed.forEach((s,i)=>{
       const n = norm(s.label);
       const left = n==='fajr'?'Fajr': n==='dhuhr'||n==='dhur'||n==='zuhr'||n==='zuhur'?'Dhuhr'
@@ -430,16 +393,17 @@
 
       const isNext = i===nextIdx;
       const timeHTML = s.jumuah ? s.today : displayHHMM(s.today);
-      const cdHTML = isNext ? '<div class="inlinecd" id="inlineCD">T---:--:--</div>' : '';
+      const cdHTML = isNext ? `<div class="inlinecd" id="inlineCD">T---:--:--</div>` : '';
 
       const el=document.createElement('div');
       el.className='row'+(isNext?' next':'');
-      el.innerHTML = \`<div class="name">\${left}</div>
-                      <div class="time">\${timeHTML}\${cdHTML}</div>
-                      <div class="tomorrow">\${s.jumuah ? s.tomorrow : displayHHMM(s.tomorrow)}</div>\`;
+      el.innerHTML = `<div class="name">${left}</div>
+                      <div class="time">${timeHTML}${cdHTML}</div>
+                      <div class="tomorrow">${s.jumuah ? s.tomorrow : displayHHMM(s.tomorrow)}</div>`;
       rowsEl.appendChild(el);
     });
 
+    // Start / update countdown for the next prayer (inline)
     if(nextTime){
       startCountdown(nextTime);
     }else{
@@ -456,8 +420,8 @@
       const today  = getRowForOffset(data, headers, 0);
       const tomorrow = getRowForOffset(data, headers, 1);
       if(!today){ const dc=findDateCol(headers); const sample=data.slice(0,5).map(r=>r[dc]).join(' | ');
-        statusEl.innerHTML=\`<span style="color:#fca5a5">Could not match today.</span> Samples: \${sample}\`; return; }
-      statusEl.textContent=\`Loaded \${name} (\${data.length} rows)\`;
+        statusEl.innerHTML=`<span style="color:#fca5a5">Could not match today.</span> Samples: ${sample}`; return; }
+      statusEl.textContent=`Loaded ${name} (${data.length} rows)`;
       render(today, tomorrow, headers);
       localStorage.setItem(STORAGE_KEY,csvText);
       localStorage.setItem(STORAGE_NAME,name);
@@ -484,182 +448,16 @@
     const name=localStorage.getItem(STORAGE_NAME)||'cached.csv';
     const ok = await tryLoadFromServer();
     if(!ok && cached){
-      statusEl.textContent=\`Offline mode — showing last saved: \${name}\`;
+      statusEl.textContent=`Offline mode — showing last saved: ${name}`;
       loadFromText(cached,name);
     }
     if(!ok && !cached){
       statusEl.textContent='Waiting for CSV…';
     }
-    makeWAQr(); // Build the QR offline
   })();
 
   function msToMidnight(){ const n=new Date(); const x=new Date(n); x.setHours(24,0,0,0); return x-n; }
   setTimeout(()=>location.reload(), msToMidnight()+5000);
-
-  /* ----------------------- Offline QR generator -----------------------
-     Minimal compact QR generator (byte mode, Level M), outputs inline SVG.
-     Based on QR encoding principles; suitable for URLs and short text.
-  ---------------------------------------------------------------------*/
-  // Compact QR encoder (supports auto typeNumber up to 10, EC Level M, byte mode)
-  // Tables (versions 1..10) for RS blocks (totalCount, dataCount) at EC levels L,M,Q,H
-  function RS(total,data){this.totalCount=total;this.dataCount=data}
-  const RS_TABLE=[
-    [new RS(19,16),new RS(16,14),new RS(13,11),new RS(9,7)],
-    [new RS(34,28),new RS(28,22),new RS(22,16),new RS(16,12)],
-    [new RS(55,44),new RS(44,34),new RS(34,26),new RS(26,20)],
-    [new RS(80,64),new RS(64,48),new RS(48,36),new RS(36,28)],
-    [new RS(108,86),new RS(86,62),new RS(62,46),new RS(46,34)],
-    [new RS(136,108),new RS(108,76),new RS(76,60),new RS(60,44)],
-    [new RS(156,124),new RS(124,88),new RS(88,66),new RS(66,50)],
-    [new RS(194,154),new RS(154,110),new RS(110,86),new RS(86,64)],
-    [new RS(232,182),new RS(182,132),new RS(132,100),new RS(100,84)],
-    [new RS(274,216),new RS(216,154),new RS(154,122),new RS(122,96)]
-  ];
-  const EC={L:0,M:1,Q:2,H:3}; // index into RS_TABLE row
-
-  const GEXP=(function(){
-    let EXP=new Array(512),LOG=new Array(256),x=1;
-    for(let i=0;i<255;i++){ EXP[i]=x; LOG[x]=i; x<<=1; if(x&0x100) x^=0x11d; }
-    for(let i=255;i<512;i++) EXP[i]=EXP[i-255];
-    return {EXP,LOG};
-  })();
-
-  function gexp(n){return GEXP.EXP[n]}
-  function glog(n){if(n<1) throw 'glog'; return GEXP.LOG[n]}
-
-  function polyMul(p,q){
-    const res=new Array(p.length+q.length-1).fill(0);
-    for(let i=0;i<p.length;i++) for(let j=0;j<q.length;j++){
-      res[i+j]^=gexp((glog(p[i])+glog(q[j]))%255);
-    }
-    return res;
-  }
-  function polyMod(p,q){
-    p=p.slice();
-    while(p.length>=q.length){
-      const ratio=(glog(p[0])-glog(q[0])+255)%255;
-      for(let i=0;i<q.length;i++) p[i]^=gexp((glog(q[i])+ratio)%255);
-      while(p[0]===0) p.shift();
-    }
-    return p;
-  }
-  function rsGen(deg){
-    let res=[1];
-    for(let i=0;i<deg;i++) res=polyMul(res,[1,gexp(i)]);
-    return res;
-  }
-
-  function bitBuffer(){ this.b=[]; this.len=0; }
-  bitBuffer.prototype.put=function(num,length){ for(let i=length-1;i>=0;i--){ this.putBit((num>>>i)&1); } };
-  bitBuffer.prototype.putBit=function(bit){ const i=this.len>>3; if(this.b.length<=i) this.b.push(0); if(bit) this.b[i]|=(0x80>>(this.len&7)); this.len++; };
-
-  function QR(type,ecLevel){
-    this.typeNumber=type||0; this.ecLevel=ecLevel; this.modules=null; this.moduleCount=0; this.data=[];
-  }
-  QR.prototype.addData=function(s){ this.data.push({mode:4, // byte mode
-    getLength:()=>s.length, write:(bb)=>{ for(let i=0;i<s.length;i++) bb.put(s.charCodeAt(i),8); }, str:s}); };
-  QR.prototype.make=function(){
-    if(this.typeNumber<1){
-      // pick smallest version that fits (up to 10)
-      for(let v=1; v<=10; v++){ this.typeNumber=v; if(this._tryMake()) return; }
-      this.typeNumber=10; this._tryMake();
-    }else{ this._tryMake(); }
-  };
-  QR.prototype._tryMake=function(){
-    const rs=RS_TABLE[this.typeNumber-1][EC.M]; // use Level M
-    const totalData=rs.dataCount;
-    const bb=new bitBuffer();
-    for(const d of this.data){ bb.put(4,4); bb.put(d.getLength(),8); d.write(bb); }
-    // terminator & pad to byte
-    const maxBits=totalData*8;
-    if(bb.len>maxBits) return false;
-    const terminator=Math.min(4,maxBits-bb.len); bb.put(0,terminator);
-    while(bb.len%8) bb.putBit(0);
-    // padding
-    const pads=[0xec,0x11]; let i=0;
-    while((bb.len>>3)<totalData){ bb.put(pads[i++&1],8); }
-
-    // error correction
-    const gen=rsGen(rs.totalCount-rs.dataCount);
-    const dataBytes=bb.b.slice(0,totalData);
-    const mod=polyMod(dataBytes.concat(new Array(gen.length-1).fill(0)), gen);
-    const codewords=dataBytes.concat(mod);
-
-    // init matrix
-    const n=this.typeNumber*4+17;
-    this.moduleCount=n; this.modules=Array.from({length:n},()=>Array(n).fill(null));
-    placeFinder(this,0,0); placeFinder(this,n-7,0); placeFinder(this,0,n-7);
-    placeTiming(this);
-    if(this.typeNumber>=2) placeAlignment(this);
-
-    // map data (simple zig-zag)
-    let row=n-1, col=n-1, dir=-1, bit=0, byte=0;
-    while(col>0){
-      if(col===6) col--; // skip timing column
-      for(let r=0;r<n;r++){
-        const rr = dir===-1 ? (row-r) : (col===6? r : r);
-      }
-      while(true){
-        for(let c=0;c<2;c++){
-          const cc=col-c; const rr=row;
-          if(this.modules[rr][cc]===null){
-            let dark=false;
-            if(byte<codewords.length){ dark = ((codewords[byte]>>(7-bit))&1)===1; bit++; if(bit===8){bit=0;byte++;} }
-            this.modules[rr][cc]=dark;
-          }
-        }
-        row+=dir;
-        if(row<0 || row>=n){ row = (row<0?0:n-1); dir*=-1; col-=2; break; }
-      }
-      if(col<=0) break;
-    }
-    return true;
-  };
-
-  function placeFinder(qr,r,c){
-    for(let y=-1;y<=7;y++) for(let x=-1;x<=7;x++){
-      const yy=r+y, xx=c+x; if(yy<0||yy>=qr.moduleCount||xx<0||xx>=qr.moduleCount) continue;
-      qr.modules[yy][xx] = (y>=0&&y<=6&&(x===0||x===6||y===0||y===6)) || (y>=2&&y<=4&&x>=2&&x<=4);
-    }
-  }
-  function placeTiming(qr){
-    for(let i=8;i<qr.moduleCount-8;i++){ qr.modules[i][6]=(i%2===0); qr.modules[6][i]=(i%2===0); }
-  }
-  function placeAlignment(qr){
-    const pos=[6,18,22,26,30]; // simplified positions for versions ≤10
-    for(let i=0;i<pos.length;i++) for(let j=0;j<pos.length;j++){
-      const r=pos[i], c=pos[j];
-      if(r>=qr.moduleCount||c>=qr.moduleCount) continue;
-      if((i===0&&j===0)||(i===0&&c===qr.moduleCount-7)||(r===qr.moduleCount-7&&j===0)) continue;
-      for(let y=-2;y<=2;y++) for(let x=-2;x<=2;x++){
-        const yy=r+y, xx=c+x; if(yy<0||yy>=qr.moduleCount||xx<0||xx>=qr.moduleCount) continue;
-        qr.modules[yy][xx] = Math.max(Math.abs(x),Math.abs(y))!==1;
-      }
-    }
-  }
-
-  function svgFromQR(qr, cellSize=6, margin=2){
-    const count=qr.moduleCount, size=(count+2*margin)*cellSize;
-    let s=\`<svg xmlns="http://www.w3.org/2000/svg" width="\${size}" height="\${size}" viewBox="0 0 \${size} \${size}">\`;
-    s+=\`<rect width="100%" height="100%" fill="white"/><g fill="black">\`;
-    for(let r=0;r<count;r++) for(let c=0;c<count;c++){
-      if(qr.modules[r][c]) s+=\`<rect x="\${(c+margin)*cellSize}" y="\${(r+margin)*cellSize}" width="\${cellSize}" height="\${cellSize}"/>\`;
-    }
-    s+='</g></svg>'; return s;
-  }
-
-  function makeWAQr(){
-    try{
-      const qr=new QR(0, EC.M);
-      qr.addData(WA_URL);
-      qr.make();
-      const svg=svgFromQR(qr, 6, 2); // cellSize=6, margin=2
-      waQR.innerHTML = svg;
-    }catch(e){
-      console.error(e);
-      waQR.innerHTML = '<div style="color:#fca5a5;font-size:12px">QR failed to render</div>';
-    }
-  }
 })();
 </script>
 </body>
