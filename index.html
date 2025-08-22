@@ -83,6 +83,18 @@
     color:#bfdbfe;
     opacity:.95;
   }
+
+  /* WhatsApp promo card */
+  .promo.card{padding:10px}
+  .promo a{display:block; text-decoration:none; outline:0}
+  .promo img{
+    width:100%; height:auto; display:block; 
+    border-radius:14px; 
+    background:rgba(255,255,255,.06);
+  }
+
+  /* footer/status */
+  #status{min-width:260px; text-align:right; color:var(--muted);}
 </style>
 </head>
 <body>
@@ -112,7 +124,14 @@
       <div class="rows" id="rows"></div>
     </div>
 
-    <div id="status" style="min-width:260px; text-align:right; color:var(--muted);"></div>
+    <!-- WhatsApp invite card -->
+    <div class="promo card">
+      <a href="https://www.whatsapp.com/channel/0029Vb6qOgq9MF8xjuiinL1f" target="_blank" rel="noopener" aria-label="Join our WhatsApp channel">
+        <img src="./whatsapp.png" alt="Join our WhatsApp channel for the latest news and updates from Masjid al Noor" />
+      </a>
+    </div>
+
+    <div id="status"></div>
   </div>
 
 <script>
@@ -203,7 +222,7 @@
         if(c==='"'){inQ=true;}
         else if(c===delim){ row.push(cur); cur=''; }
         else if(c==='\n'){
-          if(cur.length || row.some(x => (x||'').trim()!=='')){ row.push(cur); rows.push(row); }
+          if(cur.length || row.some(x => (x||'').trim()!==''){ row.push(cur); rows.push(row); }
           row=[]; cur='';
         }else{ cur+=c; }
       }
@@ -253,7 +272,7 @@
       if(n.includes(target)) sc+=10;
       if(/iqama?h?/.test(n)) sc+=3;
       if(/jama?a?t/.test(n)) sc+=1;
-      if(sc>score){score=sc; best=h;}
+      if(sc>0 && sc>score){score=sc; best=h;}
     }
     return claim(score>0?best:null);
   }
