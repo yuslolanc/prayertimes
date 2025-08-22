@@ -46,21 +46,22 @@
   .title{font-size:36px; font-weight:800; letter-spacing:.3px}
   .subtitle{font-size:14px; color:var(--muted)}
 
-  /* Date chip 50% bigger */
+  /* Date chip */
   .datechip{
     grid-column:3; justify-self:end;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     padding:18px 24px; border-radius:18px; background:var(--panel);
     border:1px solid rgba(255,255,255,.08); min-width:360px; text-align:center;
-    font-weight:800; font-size:30px;          /* base size up 50% */
+    font-weight:800; font-size:30px;
     line-height:1.2;
   }
   .datechip small{display:block; font-size:27px; color:var(--muted); font-weight:700; margin-top:2px}
   .datechip .hijri{display:block; font-size:24px; color:#c7f9cc; font-weight:800; margin-top:6px; letter-spacing:.2px}
 
+  /* 3-column table */
   .table.card{padding:0; overflow:hidden}
   .thead{display:grid; grid-template-columns:2fr 1fr 1fr; gap:0; padding:14px 16px; background:rgba(255,255,255,.04); border-bottom:1px solid rgba(255,255,255,.06)}
-  .thead div{font-size:32px; /* 2x bigger */ color:var(--muted); font-weight:700; letter-spacing:.4px}
+  .thead div{font-size:32px; color:var(--muted); font-weight:700; letter-spacing:.4px}
   .rows{display:flex; flex-direction:column}
   .row{display:grid; grid-template-columns:2fr 1fr 1fr; align-items:center; gap:0; padding:18px 16px; border-top:1px solid rgba(255,255,255,.06)}
   .row .name{font-size:28px; font-weight:800}
@@ -69,6 +70,7 @@
   .row.next{position:relative; background:linear-gradient(90deg, rgba(34,197,94,.08), rgba(255,255,255,0));}
   .row.next::after{content:''; position:absolute; inset:0; outline:3px solid var(--accent); border-radius:14px; opacity:.35; pointer-events:none}
   .row.note{grid-column:1 / -1; text-align:center; color:#a7f3d0; font-weight:700; font-style:italic; padding:8px 0;}
+
   .next.card{display:flex; gap:16px; align-items:center; padding:18px}
   .next h3{margin:0; font-size:14px; color:var(--muted); font-weight:800; letter-spacing:.5px; text-transform:uppercase}
   .next .big{font-size:28px; font-weight:900}
@@ -90,7 +92,6 @@
         <img class="logo" src="./logo.png" alt="Logo" onerror="this.style.display='none'"/>
         <div class="titles">
           <div class="title">Masjid al Noor - Iqamah Times</div>
-          <div class="subtitle" id="loc"></div>
         </div>
       </div>
       <div class="datechip" id="datechip">
@@ -108,7 +109,7 @@
 
     <div class="next card" id="nextCard">
       <div>
-        <h3>Next Salah</h3>
+        <h3>Next Prayer</h3>
         <div class="big" id="nextLabel">—</div>
       </div>
       <div class="spacer"></div>
@@ -128,7 +129,7 @@
   const STORAGE_KEY  = 'kioskCSVTextV7';
   const STORAGE_NAME = 'kioskCSVNameV7';
   const AUTO_FILE    = './prayertime.csv';
-  const PRS = ['Fajr','Dhur','Asr','Maghrib','Isha'];
+  const PRS = ['FAJR','DHUHR','ASR','MAGHRIB','ISHA'];
 
   const rowsEl = document.getElementById('rows');
   const datechip = document.getElementById('datechip');
@@ -148,7 +149,6 @@
     }catch(e){ return approxHijri(d); }
   }
   function approxHijri(g){
-    // Lightweight approximation (±1 day typical)
     const months = ["Muharram","Safar","Rabiʿ al‑Awwal","Rabiʿ al‑Thani","Jumada al‑Ula","Jumada al‑Akhira","Rajab","Shaʿban","Ramadan","Shawwal","Dhu al‑Qaʿdah","Dhu al‑Hijjah"];
     const day = g.getUTCDate(); const month = g.getUTCMonth()+1; const year = g.getUTCFullYear();
     const jd = Math.floor((1461*(year+4800-Math.floor((14-month)/12)))/4) + Math.floor((367*(month-2-12*Math.floor((14-month)/12)))/12) - Math.floor((3*Math.floor((year+4900-Math.floor((14-month)/12))/100))/4) + day - 32075;
@@ -169,15 +169,15 @@
   }
   tick(); setInterval(tick,1000);
 
+  /* CSV helpers */
   function cleanText(t){
     if(!t) return '';
-    // strip BOM/nulls, normalise line-endings to \n
     t = t.replace(/^﻿/, '').replace(/\u0000/g,'');
     t = t.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     return t;
   }
   function firstNonEmptyLine(text){
-    const lines = text.split(/\n/).map(l=>l.trim());   // already normalised
+    const lines = text.split(/\n/).map(l=>l.trim());
     return lines.find(l => l.length>0) || '';
   }
   function detectDelimiter(text){
@@ -216,14 +216,37 @@
   }
 
   const norm = s => (s||'').toLowerCase().replace(/[\s_\-]/g,'').trim();
-  function findExact(headers, key){
-    const target = norm(key);
-    return headers.find(h => norm(h) === target) || null;
-  }
+
+  // prevent reusing the same CSV column for different prayers
+  const usedCols = new Set();
+  function claim(col){ if(col) usedCols.add(col); return col; }
+
   function findPrayerHeader(headers, p){
+    const hl = headers.map(h => [h, String(h||'').toLowerCase()]);
+    const syn = {
+      'FAJR':   [/fajr/],
+      'DHUHR':  [/dhuhr/, /zuhr/, /zuhur/, /zuhr/, /dhur/, /duhr/],
+      'ASR':    [/asr/],
+      'MAGHRIB':[/maghrib/, /magrib/],
+      'ISHA':   [/isha/, /ishaa/, /isha'?a?/]
+    }[p.toUpperCase()] || [new RegExp(p.toLowerCase())];
+
+    // First pass: exact prayer-name match (prefer headers mentioning iqamah/jama'ah)
+    let candidates = hl.filter(([h,l]) => !usedCols.has(h) && syn.some(rx => rx.test(l)));
+    if(candidates.length){
+      candidates.sort((a,b)=>{
+        const aw = (/iqama?h?/.test(a[1])||/jama?a?h?/.test(a[1])) ? 1:0;
+        const bw = (/iqama?h?/.test(b[1])||/jama?a?h?/.test(b[1])) ? 1:0;
+        return bw - aw;
+      });
+      return claim(candidates[0][0]);
+    }
+
+    // Fallback: fuzzy scoring on unused headers
     const target = norm(p);
     let best=null, score=-1;
     for(const h of headers){
+      if(usedCols.has(h)) continue;
       const n=norm(h);
       let sc=0;
       if(n===target) sc+=100;
@@ -233,8 +256,9 @@
       if(/jama?a?t/.test(n)) sc+=1;
       if(sc>score){score=sc; best=h;}
     }
-    return score>0?best:null;
+    return claim(score>0?best:null);
   }
+
   function parseDate(s){
     if(!s) return null; s=String(s).trim();
     let m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/); if(m) return new Date(+m[3], +m[2]-1, +m[1]);
@@ -247,14 +271,12 @@
   function getRowForOffset(rows, headers, offset){
     const dc=findDateCol(headers);
     const base=new Date();
-       const target=new Date(base.getFullYear(), base.getMonth(), base.getDate()+offset);
-    let fallback=null;
+    const target=new Date(base.getFullYear(), base.getMonth(), base.getDate()+offset);
     for(const r of rows){
       const d=parseDate(r[dc]); if(!d) continue;
       if(sameDay(d,target)) return {row:r, dateHeader:dc};
-      if(!fallback && d.getDate()===target.getDate() && d.getMonth()===target.getMonth()) fallback={row:r, dateHeader:dc};
     }
-    return fallback;
+    return null;
   }
   function displayHHMM(s){
     if(!s) return '';
@@ -271,6 +293,7 @@
 
   function render(todayRow, tomorrowRow, headers){
     rowsEl.innerHTML='';
+    usedCols.clear();
     const slots=[];
 
     for(const p of PRS){
@@ -280,6 +303,11 @@
       if(tToday || tTomorrow) slots.push({label:p, today:tToday, tomorrow:tTomorrow});
     }
 
+    // Jumu'ah pairing (multiple spellings)
+    function findExact(headers, key){
+      const target = norm(key);
+      return headers.find(h => norm(h) === target) || null;
+    }
     const hJ1 = findExact(headers,'jumuah1') || findExact(headers,'jummah1') || findExact(headers,'jumuah_1') || findExact(headers,'jummah_1');
     const hJ2 = findExact(headers,'jumuah2') || findExact(headers,'jummah2') || findExact(headers,'jumuah_2') || findExact(headers,'jummah_2');
 
@@ -296,13 +324,13 @@
       const t1 = hJ1 ? todayRow.row[hJ1] : '';
       const t2 = hJ2 ? todayRow.row[hJ2] : '';
       const combined = fmtPair(t1,t2);
-      if(combined) slots.push({label:"Jummah 1st/2nd", today:combined, tomorrow:'', jumuah:true});
+      if(combined) slots.splice(1,0,{label:'JUMUAH 1/2', today:combined, tomorrow:'', jumuah:true});
     }
     if(isFriTomorrow && (hJ1 || hJ2)){
       const t1 = hJ1 && tomorrowRow ? tomorrowRow.row[hJ1] : '';
       const t2 = hJ2 && tomorrowRow ? tomorrowRow.row[hJ2] : '';
       const combined = fmtPair(t1,t2);
-      if(combined) slots.push({label:"Jummah 1st/2nd", today:'', tomorrow:combined, jumuah:true});
+      if(combined) slots.push({label:'JUMUAH 1/2', today:'', tomorrow:combined, jumuah:true});
     }
 
     let nextIdx=-1, nextTime=null;
@@ -326,20 +354,13 @@
     }
 
     parsed.forEach((s,i)=>{
-      const left = s.jumuah ? s.today : displayHHMM(s.today);
-      const right = s.jumuah ? s.tomorrow : displayHHMM(s.tomorrow);
+      const left = (s.label==='FAJR'?'Fajr': s.label==='DHUHR'?'Dhur': s.label==='ASR'?'Asr': s.label==='MAGHRIB'?'Maghrib': s.label==='ISHA'?'Isha': s.label);
       const el=document.createElement('div');
       el.className='row'+(i===nextIdx?' next':'');
-      el.innerHTML = `<div class="name">${s.label}</div>
-                      <div class="time">${left}</div>
-                      <div class="tomorrow">${right}</div>`;
+      el.innerHTML = `<div class="name">${left}</div>
+                      <div class="time">${s.jumuah ? s.today : displayHHMM(s.today)}</div>
+                      <div class="tomorrow">${s.jumuah ? s.tomorrow : displayHHMM(s.tomorrow)}</div>`;
       rowsEl.appendChild(el);
-      if(s.label==='Jummah 1st/2nd' && (s.today || s.tomorrow)){
-        const note=document.createElement('div');
-        note.className='row note';
-        note.innerHTML = '&ldquo;Please arrive early for Jumu&#39;ah to benefit from the Imam&#39;s talk before the Khutbah.&rdquo;';
-        rowsEl.appendChild(note);
-      }
     });
 
     const nextLabel=document.getElementById('nextLabel');
