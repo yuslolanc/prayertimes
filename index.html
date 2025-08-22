@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Masjid al Noor • Prayer Times</title>
+<style>
+  :root{
+    --bg:#0a0f0f; --panel:#12181b; --accent:#22c55e; --muted:#97a3af; --text:#e8f0f2;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", sans-serif;color:var(--text)}
+  body{background: radial-gradient(1000px 600px at 70% -10%, rgba(34,197,94,.15) 0%, rgba(0,0,0,.65) 45%, rgba(0,0,0,.85) 100%);}
+  .shell{position:relative; min-height:100%; padding:18px; display:flex; flex-direction:column; gap:18px}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0)); background-color:rgba(10,12,12,.65);
+        border:1px solid rgba(255,255,255,.08); border-radius:20px; box-shadow:0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
+        backdrop-filter:blur(10px) saturate(120%);}
+  .header.card{display:flex; align-items:center; gap:18px; padding:14px 16px}
+  .logo{height:56px;width:56px; object-fit:contain; border-radius:12px; background:rgba(255,255,255,.06)}
+  .titles{display:flex; flex-direction:column; gap:4px}
+  .title{font-size:34px; font-weight:800; letter-spacing:.3px}
+  .subtitle{font-size:14px; color:var(--muted)}
+  .datechip{margin-left:auto; display:flex; align-items:center; justify-content:center; padding:12px 18px; border-radius:16px; background:var(--panel);
+            border:1px solid rgba(255,255,255,.08); min-width:220px; text-align:center; font-weight:800; font-size:22px;}
+  .datechip small{display:block; font-size:12px; color:var(--muted); font-weight:600; margin-top:2px}
+  .table.card{padding:0; overflow:hidden}
+  .thead{display:grid; grid-template-columns:2fr 1fr 1fr; gap:0; padding:14px 16px; background:rgba(255,255,255,.04); border-bottom:1px solid rgba(255,255,255,.06)}
+  .thead div{font-size:16px; color:var(--muted); font-weight:700; letter-spacing:.4px}
+  .rows{display:flex; flex-direction:column}
+  .row{display:grid; grid-template-columns:2fr 1fr 1fr; align-items:center; gap:0; padding:18px 16px; border-top:1px solid rgba(255,255,255,.06)}
+  .row .name{font-size:28px; font-weight:800}
+  .row .time{font-size:28px; font-weight:900; letter-spacing:.5px}
+  .row .tomorrow{justify-self:end; font-weight:900; font-size:22px; color:#dbeafe}
+  .row.next{position:relative; background:linear-gradient(90deg, rgba(34,197,94,.08), rgba(255,255,255,0));}
+  .row.next::after{content:''; position:absolute; inset:0; outline:3px solid var(--accent); border-radius:14px; opacity:.35; pointer-events:none}
+  .row.note{grid-column:1 / -1; text-align:center; color:#a7f3d0; font-weight:700; font-style:italic; padding:8px 0;}
+  .next.card{display:flex; gap:16px; align-items:center; padding:18px}
+  .next h3{margin:0; font-size:14px; color:var(--muted); font-weight:800; letter-spacing:.5px; text-transform:uppercase}
+  .next .big{font-size:28px; font-weight:900}
+  .spacer{flex:1}
+  .count{display:flex; gap:8px; align-items:baseline}
+  .count .num{font-size:28px; font-weight:900}
+  .count .lab{font-size:12px; color:var(--muted); margin-left:2px}
+  .toolbar{display:flex; gap:12px; align-items:center; justify-content:flex-start; flex-wrap:wrap}
+  .btn{appearance:none; border:0; background:var(--accent); color:#00140a; font-weight:900; padding:10px 14px; border-radius:12px; cursor:pointer}
+  .btn:active{transform:translateY(1px)}
+  .btn.secondary{background:#1f2937; color:#e5e7eb; border:1px solid rgba(255,255,255,.08)}
+  .drop{flex:1; min-width:280px; border:2px dashed rgba(255,255,255,.2); border-radius:12px; padding:10px 14px; color:var(--muted); font-size:14px}
+  .drop.drag{border-color:var(--accent); color:#c7f9cc; background:rgba(34,197,94,.08)}
+</style>
+</head>
+<body>
+  <div class="shell">
+    <div class="header card">
+      <img class="logo" src="./logo.png" alt="Logo" onerror="this.style.display='none'"/>
+      <div class="titles">
+        <div class="title">Masjid al Noor • Prayer Times</div>
+        <div class="subtitle" id="loc">Lancaster</div>
+      </div>
+      <div class="datechip" id="datechip">--:--<small>—</small></div>
+    </div>
+
+    <div class="table card">
+      <div class="thead">
+        <div>Prayer</div><div>Jama'ah</div><div style="text-align:right">Tomorrow's Times</div>
+      </div>
+      <div class="rows" id="rows"></div>
+    </div>
+
+    <div class="next card" id="nextCard">
+      <div>
+        <h3>Next Prayer</h3>
+        <div class="big" id="nextLabel">—</div>
+      </div>
+      <div class="spacer"></div>
+      <div class="count">
+        <div class="num" id="cdHours">--</div><div class="lab">h</div>
+        <div class="num" id="cdMins">--</div><div class="lab">m</div>
+        <div class="num" id="cdSecs">--</div><div class="lab">s</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn" id="loadBtn" type="button">Load CSV</button>
+      <input type="file" id="file" accept=".csv,.txt,text/csv" hidden />
+      <label for="file" class="btn">Choose file…</label>
+      <button class="btn secondary" id="refreshBtn" type="button" title="Clear cache and re-pull">Refresh</button>
+      <div id="drop" class="drop">Drag & drop CSV here • Headers: date, Time, fajr_iqamah, dhuhr_iqamah, asr_iqamah, maghrib_iqamah, isha_iqamah, jumuah1, jumuah2</div>
+      <div id="status" style="min-width:260px; text-align:right; color:var(--muted);"></div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const TZ = 'Europe/London';
+  const STORAGE_KEY  = 'kioskCSVTextV7';
+  const STORAGE_NAME = 'kioskCSVNameV7';
+  const AUTO_FILE    = './prayertime.csv';
+  const PRS = ['FAJR','DHUHR','ASR','MAGHRIB','ISHA'];
+
+  const rowsEl = document.getElementById('rows');
+  const datechip = document.getElementById('datechip');
+  const statusEl = document.getElementById('status');
+  const fileEl = document.getElementById('file');
+  const loadBtn = document.getElementById('loadBtn');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const dropEl = document.getElementById('drop');
+
+  function fmtTime(d){ return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:TZ}).format(d); }
+  function fmtDateLong(d){ return new Intl.DateTimeFormat('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:TZ}).format(d); }
+  function tick(){ const now=new Date(); datechip.innerHTML = fmtTime(now) + '<small>'+fmtDateLong(now)+'</small>'; }
+  tick(); setInterval(tick,1000);
+
+  function cleanText(t){
+    if(!t) return '';
+    t = t.replace(/^﻿/, '').replace(/\u0000/g,'');
+    t = t.replace(/\r(?!\n)/g, '\n');
+    return t;
+  }
+  function firstNonEmptyLine(text){
+    const lines = text.split(/\r?\n/).map(l=>l.trim());
+    return lines.find(l => l.length>0) || '';
+    }
+  function detectDelimiter(text){
+    const header = firstNonEmptyLine(text);
+    const cands=[',',';','\t','|'];
+    let best=',', n=0;
+    for(const d of cands){ const m=(header.split(d).length-1); if(m>n){best=d;n=m;} }
+    return best;
+  }
+  function parseCSV(text){
+    text = cleanText(text);
+    if(!text.trim()) return {headers:[], data:[]};
+    const delim = detectDelimiter(text);
+    const rows=[]; let cur='', row=[], inQ=false;
+    for(let i=0;i<text.length;i++){
+      const c=text[i], n=text[i+1];
+      if(inQ){
+        if(c==='"' && n==='"'){cur+='"'; i++;}
+        else if(c==='"'){inQ=false;}
+        else{cur+=c;}
+      }else{
+        if(c==='"'){inQ=true;}
+        else if(c===delim){ row.push(cur); cur=''; }
+        else if(c==='\n' || c==='\r'){
+          if(c==='\r' && n==='\n') i++;
+          if(cur.length || row.some(x => (x||'').trim()!=='')){ row.push(cur); rows.push(row); }
+          row=[]; cur='';
+        }else{ cur+=c; }
+      }
+    }
+    if(cur.length>0 || row.length>0){ row.push(cur); rows.push(row); }
+    while(rows.length && rows[0].every(x => String(x||'').trim()==='')) rows.shift();
+    if(!rows.length) return {headers:[], data:[]};
+    const headers = rows[0].map(h => String(h||'').replace(/^﻿/,'').trim());
+    const data = rows.slice(1).filter(r => r.some(x => (x||'').trim()!=='')).map(r => Object.fromEntries(headers.map((h,i)=>[h, r[i]??''])));
+    return {headers, data, delim};
+  }
+
+  const norm = s => (s||'').toLowerCase().replace(/[\s_\-]/g,'').trim();
+  function findExact(headers, key){
+    const target = norm(key);
+    return headers.find(h => norm(h) === target) || null;
+  }
+  function findPrayerHeader(headers, p){
+    const target = norm(p);
+    let best=null, score=-1;
+    for(const h of headers){
+      const n=norm(h);
+      let sc=0;
+      if(n===target) sc+=100;
+      if(n.startsWith(target)) sc+=50;
+      if(n.includes(target)) sc+=10;
+      if(/iqama?h?/.test(n)) sc+=3;
+      if(/jama?a?t/.test(n)) sc+=1;
+      if(sc>score){score=sc; best=h;}
+    }
+    return score>0?best:null;
+  }
+  function parseDate(s){
+    if(!s) return null; s=String(s).trim();
+    let m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/); if(m) return new Date(+m[3], +m[2]-1, +m[1]);
+    m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/); if(m) return new Date(2000+ +m[3], +m[2]-1, +m[1]);
+    m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/); if(m) return new Date(+m[1], +m[2]-1, +m[3]);
+    const t=Date.parse(s); return isNaN(t)?null:new Date(t);
+  }
+  function sameDay(a,b){ return a && b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
+  function findDateCol(headers){ return headers.find(h=>norm(h)==='date') || headers[0]; }
+  function getRowForOffset(rows, headers, offset){
+    const dc=findDateCol(headers);
+    const base=new Date();
+    const target=new Date(base.getFullYear(), base.getMonth(), base.getDate()+offset);
+    let fallback=null;
+    for(const r of rows){
+      const d=parseDate(r[dc]); if(!d) continue;
+      if(sameDay(d,target)) return {row:r, dateHeader:dc};
+      if(!fallback && d.getDate()===target.getDate() && d.getMonth()===target.getMonth()) fallback={row:r, dateHeader:dc};
+    }
+    return fallback;
+  }
+  function displayHHMM(s){
+    if(!s) return '';
+    const m = String(s).match(/(\d{1,2}):(\d{2})/);
+    return m ? `${m[1].padStart(2,'0')}:${m[2]}` : String(s);
+  }
+  function parseTimeToToday(s){
+    if(!s) return null; s=String(s).trim().toLowerCase().replace(/\./g,':');
+    let m=s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([ap]m))?$/); if(!m) return null;
+    let h=+m[1], mi=+m[2], se=m[3]?+m[3]:0;
+    if(m[4]==='pm'&&h<12)h+=12; if(m[4]==='am'&&h===12)h=0;
+    const t=new Date(); t.setHours(h,mi,se,0); return t;
+  }
+
+  function render(todayRow, tomorrowRow, headers){
+    rowsEl.innerHTML='';
+    const slots=[];
+
+    for(const p of PRS){
+      const col=findPrayerHeader(headers,p);
+      const tToday = col? String(todayRow.row[col]||'').trim():'';
+      const tTomorrow = col? String(tomorrowRow?.row?.[col]||'').trim():'';
+      if(tToday || tTomorrow) slots.push({label:p, today:tToday, tomorrow:tTomorrow});
+    }
+
+    const hJ1 = findExact(headers,'jumuah1') || findExact(headers,'jummah1') || findExact(headers,'jumuah_1') || findExact(headers,'jummah_1');
+    const hJ2 = findExact(headers,'jumuah2') || findExact(headers,'jummah2') || findExact(headers,'jumuah_2') || findExact(headers,'jummah_2');
+
+    const now = new Date();
+    const isFriToday = now.getDay()===5;
+    const isFriTomorrow = (new Date(now.getFullYear(), now.getMonth(), now.getDate()+1)).getDay()===5;
+
+    function fmtPair(t1,t2){
+      const a=displayHHMM(t1), b=displayHHMM(t2);
+      return [a,b].filter(Boolean).join(' · ');
+    }
+
+    if(isFriToday && (hJ1 || hJ2)){
+      const t1 = hJ1 ? todayRow.row[hJ1] : '';
+      const t2 = hJ2 ? todayRow.row[hJ2] : '';
+      const combined = fmtPair(t1,t2);
+      if(combined) slots.push({label:'JUMUAH 1/2', today:combined, tomorrow:'', jumuah:true});
+    }
+    if(isFriTomorrow && (hJ1 || hJ2)){
+      const t1 = hJ1 && tomorrowRow ? tomorrowRow.row[hJ1] : '';
+      const t2 = hJ2 && tomorrowRow ? tomorrowRow.row[hJ2] : '';
+      const combined = fmtPair(t1,t2);
+      if(combined) slots.push({label:'JUMUAH 1/2', today:'', tomorrow:combined, jumuah:true});
+    }
+
+    let nextIdx=-1, nextTime=null;
+    const parsed = slots.map((s,i)=>{
+      let d=null;
+      if(s.jumuah && s.today){
+        const first = String(s.today).split('·')[0].trim();
+        d=parseTimeToToday(first);
+      }else{
+        d=parseTimeToToday(s.today);
+      }
+      if(d && d>new Date() && (!nextTime || d<nextTime)){ nextTime=d; nextIdx=i; }
+      return {...s, date:d};
+    });
+    if(nextIdx===-1){
+      const fajrIdx = parsed.findIndex(x=>x.label==='FAJR'&&x.today);
+      if(fajrIdx>=0){
+        const d = parseTimeToToday(parsed[fajrIdx].today);
+        if(d){ nextIdx=fajrIdx; nextTime=new Date(d.getTime()+24*3600*1000); }
+      }
+    }
+
+    parsed.forEach((s,i)=>{
+      const left = s.jumuah ? s.today : displayHHMM(s.today);
+      const right = s.jumuah ? s.tomorrow : displayHHMM(s.tomorrow);
+      const el=document.createElement('div');
+      el.className='row'+(i===nextIdx?' next':'');
+      el.innerHTML = `<div class="name">${s.label}</div>
+                      <div class="time">${left}</div>
+                      <div class="tomorrow">${right}</div>`;
+      rowsEl.appendChild(el);
+      if(s.label==='JUMUAH 1/2' && (s.today || s.tomorrow)){
+        const note=document.createElement('div');
+        note.className='row note';
+        note.innerHTML = '&ldquo;Please arrive early for Jumu&#39;ah to benefit from the Imam&#39;s talk before the Khutbah.&rdquo;';
+        rowsEl.appendChild(note);
+      }
+    });
+
+    const nextLabel=document.getElementById('nextLabel');
+    const hEl=document.getElementById('cdHours'), mEl=document.getElementById('cdMins'), sEl=document.getElementById('cdSecs');
+    if(nextIdx<0 || !nextTime){ nextLabel.textContent='—'; hEl.textContent='--'; mEl.textContent='--'; sEl.textContent='--'; return; }
+    nextLabel.textContent = parsed[nextIdx].label + ' at ' + (parsed[nextIdx].jumuah ? String(parsed[nextIdx].today).split('·')[0].trim() : displayHHMM(parsed[nextIdx].today));
+    function tickCD(){
+      let diff=Math.max(0, Math.floor((nextTime - new Date())/1000));
+      const h=Math.floor(diff/3600), m=Math.floor((diff%3600)/60), s=diff%60;
+      hEl.textContent=String(h).padStart(2,'0'); mEl.textContent=String(m).padStart(2,'0'); sEl.textContent=String(s).padStart(2,'0');
+    }
+    tickCD(); setInterval(tickCD,1000);
+  }
+
+  function loadFromText(csvText, name='(pasted)'){
+    try{
+      const {headers,data}=parseCSV(csvText);
+      if(!headers.length || !data.length){ statusEl.textContent='CSV empty.'; return; }
+      const today  = getRowForOffset(data, headers, 0);
+      const tomorrow = getRowForOffset(data, headers, 1);
+      if(!today){ const dc=findDateCol(headers); const sample=data.slice(0,5).map(r=>r[dc]).join(' | ');
+        statusEl.innerHTML=`<span style="color:#fca5a5">Could not match today.</span> Samples: ${sample}`; return; }
+      statusEl.textContent=`Loaded ${name} (${data.length} rows)`;
+      render(today, tomorrow, headers);
+      localStorage.setItem(STORAGE_KEY,csvText);
+      localStorage.setItem(STORAGE_NAME,name);
+    }catch(e){ console.error(e); statusEl.textContent='Failed to read CSV.'; }
+  }
+
+  async function tryLoadFromServer(){
+    if(!location.protocol.startsWith('http')) return false;
+    try{
+      const resp = await fetch(AUTO_FILE + '?t=' + Date.now(), {cache:'no-store'});
+      if(!resp.ok) throw new Error('HTTP '+resp.status);
+      const t = await resp.text();
+      statusEl.textContent='Loaded prayertime.csv from server';
+      loadFromText(t,'prayertime.csv');
+      return true;
+    }catch(e){
+      console.warn('Fetch failed, will use cached if available', e);
+      return false;
+    }
+  }
+
+  (async function init(){
+    const cached=localStorage.getItem(STORAGE_KEY);
+    const name=localStorage.getItem(STORAGE_NAME)||'cached.csv';
+    const ok = await tryLoadFromServer();
+    if(!ok && cached){
+      statusEl.textContent=`Offline mode — showing last saved: ${name}`;
+      loadFromText(cached,name);
+    }
+    if(!ok && !cached){
+      statusEl.textContent='Waiting for CSV… (upload or drag & drop)';
+    }
+  })();
+
+  function decodeArrayBuffer(buf){
+    const bytes=new Uint8Array(buf);
+    if(bytes.length>=3 && bytes[0]===0xEF && bytes[1]===0xBB && bytes[2]===0xBF) return new TextDecoder('utf-8').decode(bytes.subarray(3));
+    if(bytes.length>=2 && bytes[0]===0xFF && bytes[1]===0xFE) return new TextDecoder('utf-16le').decode(bytes.subarray(2));
+    if(bytes.length>=2 && bytes[0]===0xFE && bytes[1]===0xFF) return new TextDecoder('utf-16be').decode(bytes.subarray(2));
+    try{ return new TextDecoder('utf-8').decode(bytes); }catch(_){ return String.fromCharCode.apply(null, bytes); }
+  }
+  function readFileAsText(file, cb){
+    const r=new FileReader();
+    r.onabort=()=>{ statusEl.textContent='Read aborted.'; };
+    r.onerror=()=>{ statusEl.textContent='Could not read file.'; };
+    r.onload=()=>{ try{ const text=decodeArrayBuffer(r.result); cb(text); }catch(e){ console.error(e); statusEl.textContent='Failed to decode file.'; } };
+    r.readAsArrayBuffer(file);
+  }
+  loadBtn.addEventListener('click', ()=> { statusEl.textContent='Choose a CSV file…'; fileEl.click(); });
+  fileEl.addEventListener('change', e=>{
+    const f=e.target.files?.[0]; if(!f){ statusEl.textContent='No file selected.'; return; }
+    statusEl.textContent=`Reading ${f.name} (${f.size} bytes)…`; readFileAsText(f, (text)=> loadFromText(text, f.name));
+  });
+  ['dragenter','dragover','dragleave','drop'].forEach(evt => dropEl.addEventListener(evt, e=>{e.preventDefault();e.stopPropagation();}));
+  ['dragenter','dragover'].forEach(evt => dropEl.addEventListener(evt, ()=>dropEl.classList.add('drag')));
+  ['dragleave','drop'].forEach(evt => dropEl.addEventListener(evt, ()=>dropEl.classList.remove('drag')));
+  dropEl.addEventListener('drop', e => {
+    const f=e.dataTransfer.files?.[0]; if(!f){ statusEl.textContent='No file dropped.'; return; }
+    statusEl.textContent=`Reading ${f.name} (${f.size} bytes)…`; readFileAsText(f, (text)=> loadFromText(text, f.name));
+  });
+
+  refreshBtn.addEventListener('click', async () => {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_NAME);
+    statusEl.textContent='Refreshing from server…';
+    const ok = await tryLoadFromServer();
+    if(!ok) statusEl.textContent='Could not reach server — still waiting for CSV or use Choose file.';
+  });
+
+  function msToMidnight(){ const n=new Date(); const x=new Date(n); x.setHours(24,0,0,0); return x-n; }
+  setTimeout(()=>location.reload(), msToMidnight()+5000);
+})();
+</script>
+</body>
+</html>
