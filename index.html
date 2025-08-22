@@ -77,7 +77,7 @@
   .spacer{flex:1}
   .count{display:flex; gap:8px; align-items:baseline}
   .count .num{font-size:28px; font-weight:900}
-  .count .lab{font-size:12px; color:var(--muted); margin-left:2px}
+  .count .lab{font-size:12px; color:#aab4bf; margin-left:2px}
 </style>
 </head>
 <body>
@@ -225,7 +225,7 @@
     const hl = headers.map(h => [h, String(h||'').toLowerCase()]);
     const syn = {
       'FAJR':   [/fajr/],
-      'DHUHR':  [/dhuhr/, /zuhr/, /zuhur/, /zuhr/, /dhur/, /duhr/],
+      'DHUHR':  [/dhuhr/, /dhur/, /duhr/, /zuhr/, /zuhur/],
       'ASR':    [/asr/],
       'MAGHRIB':[/maghrib/, /magrib/],
       'ISHA':   [/isha/, /ishaa/, /isha'?a?/]
@@ -303,6 +303,17 @@
       if(tToday || tTomorrow) slots.push({label:p, today:tToday, tomorrow:tTomorrow});
     }
 
+    const now = new Date();
+    const isFriToday = now.getDay()===5;
+    const isFriTomorrow = (new Date(now.getFullYear(), now.getMonth(), now.getDate()+1)).getDay()===5;
+
+    // Blank Dhuhr cells on Fridays as requested
+    const dhuhr = slots.find(s=>s.label==='DHUHR');
+    if(dhuhr){
+      if(isFriToday) dhuhr.today='';
+      if(isFriTomorrow) dhuhr.tomorrow='';
+    }
+
     // Jumu'ah pairing (multiple spellings)
     function findExact(headers, key){
       const target = norm(key);
@@ -310,10 +321,6 @@
     }
     const hJ1 = findExact(headers,'jumuah1') || findExact(headers,'jummah1') || findExact(headers,'jumuah_1') || findExact(headers,'jummah_1');
     const hJ2 = findExact(headers,'jumuah2') || findExact(headers,'jummah2') || findExact(headers,'jumuah_2') || findExact(headers,'jummah_2');
-
-    const now = new Date();
-    const isFriToday = now.getDay()===5;
-    const isFriTomorrow = (new Date(now.getFullYear(), now.getMonth(), now.getDate()+1)).getDay()===5;
 
     function fmtPair(t1,t2){
       const a=displayHHMM(t1), b=displayHHMM(t2);
