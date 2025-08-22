@@ -44,7 +44,7 @@
   }
   .logo{
     height:112px; width:112px;
-    object-fit:contain; border-radius:16px; background:#fff; /* fixed bug */
+    object-fit:contain; border-radius:16px; background:#fff)
   }
   .titles{display:flex; flex-direction:column; gap:6px; text-align:center}
   .title{font-size:36px; font-weight:800; letter-spacing:.3px}
@@ -56,16 +56,17 @@
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     padding:18px 24px; border-radius:18px; background:var(--panel);
     border:1px solid rgba(255,255,255,.08); min-width:360px; text-align:center;
-    font-weight:800; font-size:30px; line-height:1.2;
+    font-weight:800; font-size:30px;
+    line-height:1.2;
   }
   .datechip small{display:block; font-size:27px; color:var(--muted); font-weight:700; margin-top:2px}
   .datechip .hijri{display:block; font-size:24px; color:#bfdbfe; font-weight:800; margin-top:6px; letter-spacing:.2px}
 
   /* 3-column table */
-  .table.card{padding:0; overflow:hidden; flex:1; min-height:0;}
+  .table.card{padding:0; overflow:hidden}
   .thead{display:grid; grid-template-columns:2fr 1fr 1fr; gap:0; padding:14px 16px; background:rgba(255,255,255,.04); border-bottom:1px solid rgba(255,255,255,.06)}
   .thead div{font-size:32px; color:var(--muted); font-weight:700; letter-spacing:.4px}
-  .rows{display:flex; flex-direction:column; overflow:auto;}
+  .rows{display:flex; flex-direction:column}
   .row{display:grid; grid-template-columns:2fr 1fr 1fr; align-items:center; gap:0; padding:18px 16px; border-top:1px solid rgba(255,255,255,.06)}
   .row .name{font-size:28px; font-weight:800}
   .row .time{font-size:28px; font-weight:900; letter-spacing:.5px; display:flex; flex-direction:column;}
@@ -82,18 +83,6 @@
     color:#bfdbfe;
     opacity:.95;
   }
-
-  /* WhatsApp promo card */
-  .promo.card{padding:10px}
-  .promo a{display:block; text-decoration:none; outline:0}
-  .promo img{
-    width:100%; height:auto; display:block; 
-    border-radius:14px; 
-    background:rgba(255,255,255,.06);
-  }
-
-  /* footer/status */
-  #status{min-width:260px; text-align:right; color:var(--muted);}
 </style>
 </head>
 <body>
@@ -123,14 +112,7 @@
       <div class="rows" id="rows"></div>
     </div>
 
-    <!-- WhatsApp invite card -->
-    <div class="promo card">
-      <a href="https://www.whatsapp.com/channel/0029Vb6qOgq9MF8xjuiinL1f" target="_blank" rel="noopener" aria-label="Join our WhatsApp channel">
-        <img src="./whatsapp.png" alt="Join our WhatsApp channel for the latest news and updates from Masjid al Noor" />
-      </a>
-    </div>
-
-    <div id="status"></div>
+    <div id="status" style="min-width:260px; text-align:right; color:var(--muted);"></div>
   </div>
 
 <script>
@@ -170,7 +152,7 @@
   function approxHijri(g){
     const months = ["Muharram","Safar","Rabiʿ al-Awwal","Rabiʿ al-Thani","Jumada al-Ula","Jumada al-Akhira","Rajab","Shaʿban","Ramadan","Shawwal","Dhu al-Qaʿdah","Dhu al-Hijjah"];
     const day = g.getUTCDate(); const month = g.getUTCMonth()+1; const year = g.getUTCFullYear();
-    const jd = Math.floor((1461*(year+4800-Math.floor((14-month)/12)))/4) + Math.floor((367*(month-2-12*Math.floor((14-month)/12)))/12) - Math.floor((3*Math.floor((year+4900-Math.floor((14-month)/12))/100))/4) + day - 32075);
+    const jd = Math.floor((1461*(year+4800-Math.floor((14-month)/12)))/4) + Math.floor((367*(month-2-12*Math.floor((14-month)/12)))/12) - Math.floor((3*Math.floor((year+4900-Math.floor((14-month)/12))/100))/4) + day - 32075;
     const islamic = Math.floor((jd - 1948439.5) / 29.530588861);
     const iMonth = Math.max(1, Math.min(12, Math.floor((jd - 1948439.5 - islamic*29.530588861) / 29.530588861 * 12) + 1));
     const iDay   = Math.max(1, Math.min(30, Math.floor(jd - (islamic*29.530588861 + 1948439.5) + 1)));
@@ -221,7 +203,7 @@
         if(c==='"'){inQ=true;}
         else if(c===delim){ row.push(cur); cur=''; }
         else if(c==='\n'){
-          if(cur.length || row.some(x => (x||'').trim()!==''){ row.push(cur); rows.push(row); }
+          if(cur.length || row.some(x => (x||'').trim()!=='')){ row.push(cur); rows.push(row); }
           row=[]; cur='';
         }else{ cur+=c; }
       }
@@ -271,7 +253,7 @@
       if(n.includes(target)) sc+=10;
       if(/iqama?h?/.test(n)) sc+=3;
       if(/jama?a?t/.test(n)) sc+=1;
-      if(sc>0 && sc>score){score=sc; best=h;}
+      if(sc>score){score=sc; best=h;}
     }
     return claim(score>0?best:null);
   }
