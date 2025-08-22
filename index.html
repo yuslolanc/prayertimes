@@ -44,7 +44,7 @@
   }
   .logo{
     height:112px; width:112px;
-    object-fit:contain; border-radius:16px; background:#fff; /* fixed stray ')' */
+    object-fit:contain; border-radius:16px; background:#fff;
   }
   .titles{display:flex; flex-direction:column; gap:6px; text-align:center}
   .title{font-size:36px; font-weight:800; letter-spacing:.3px}
@@ -84,7 +84,7 @@
     opacity:.95;
   }
 
-  /* Footer banner card (full width, styled like other cards) */
+  /* Footer banner card */
   .footer-card{
     background: rgba(255,255,255,.04);
     border: 1px solid rgba(255,255,255,.08);
@@ -93,81 +93,51 @@
     margin-top: 12px;
     box-shadow: 0 6px 18px rgba(0,0,0,.25) inset, 0 8px 20px rgba(0,0,0,.25);
   }
+  .footer-card a{ display:block; }
+  .footer-card a:hover{ cursor:pointer; }
   .footer-card img{
     display:block;
     width:100%;
     height:auto;
     border-radius:8px;
   }
+
   /* ====== Responsive tweaks ====== */
-
-/* Tablet-ish: tighten spacing & fonts a bit */
-@media (max-width: 900px) {
-  .shell { padding: 14px; gap: 14px; }
-  #clockNow { font-size: 36px; width: 128px; }
-  .logo { width: 96px; height: 96px; }
-  .title { font-size: 30px; }
-  .datechip { min-width: 260px; font-size: 24px; padding: 14px 18px; }
-  .datechip small { font-size: 20px; }
-  .datechip .hijri { font-size: 20px; }
-
-  .thead div { font-size: 26px; }
-  .row { padding: 14px 14px; }
-  .row .name, .row .time { font-size: 24px; }
-  .row .tomorrow { font-size: 18px; }
-}
-
-/* Phone: stack header, hide "Tomorrow" column, smaller fonts */
-@media (max-width: 600px) {
-  .shell { padding: 12px; gap: 12px; }
-
-  /* Header stacks: logo/title then date chip below */
-  .header.card {
-    grid-template-columns: 1fr;
-    gap: 8px;
-    text-align: center;
+  @media (max-width: 900px) {
+    .shell { padding: 14px; gap: 14px; }
+    #clockNow { font-size: 36px; width: 128px; }
+    .logo { width: 96px; height: 96px; }
+    .title { font-size: 30px; }
+    .datechip { min-width: 260px; font-size: 24px; padding: 14px 18px; }
+    .datechip small, .datechip .hijri { font-size: 20px; }
+    .thead div { font-size: 26px; }
+    .row { padding: 14px 14px; }
+    .row .name, .row .time { font-size: 24px; }
+    .row .tomorrow { font-size: 18px; }
   }
-  .header .center { grid-column: 1; }
-  .datechip {
-    grid-column: 1;
-    justify-self: center;
-    min-width: 0;
-    padding: 12px 14px;
-    font-size: 18px;
+  @media (max-width: 600px) {
+    .shell { padding: 12px; gap: 12px; }
+    .header.card { grid-template-columns: 1fr; gap: 8px; text-align:center; }
+    .header .center { grid-column: 1; }
+    .datechip { grid-column: 1; justify-self:center; min-width:0; padding:12px 14px; font-size:18px; }
+    .datechip small, .datechip .hijri { font-size:16px; }
+    #clockNow { font-size: 32px; width: 120px; }
+    .logo { width: 84px; height: 84px; }
+    .title { font-size: 24px; }
+    .thead { grid-template-columns: 1.2fr 1fr; padding:12px; }
+    .thead div:last-child { display:none; }     /* hide Tomorrow header */
+    .row { grid-template-columns: 1.2fr 1fr; padding:12px; }
+    .row .tomorrow { display:none; }           /* hide Tomorrow cell */
+    .row .name, .row .time { font-size:20px; }
+    .inlinecd { font-size:12px; }
+    .footer-card { padding:8px; border-radius:10px; }
+    .footer-card img { border-radius:6px; }
   }
-  .datechip small { font-size: 16px; margin-top: 0; }
-  .datechip .hijri { font-size: 16px; }
-
-  #clockNow { font-size: 32px; width: 120px; }
-  .logo { width: 84px; height: 84px; }
-  .title { font-size: 24px; }
-
-  /* Table: drop "Tomorrow" column on small screens */
-  .thead { grid-template-columns: 1.2fr 1fr; padding: 12px; }
-  .thead div:last-child { display: none; }      /* hide "Tomorrow" header */
-
-  .row {
-    grid-template-columns: 1.2fr 1fr;           /* name | time */
-    padding: 12px;
+  @media (max-width: 380px) {
+    .title { font-size: 20px; }
+    #clockNow { font-size: 28px; width: 110px; }
+    .row .name, .row .time { font-size: 18px; }
   }
-  .row .tomorrow { display: none; }             /* hide tomorrow cell */
-
-  .row .name { font-size: 20px; }
-  .row .time { font-size: 20px; }
-  .inlinecd { font-size: 12px; }
-
-  /* Footer banner */
-  .footer-card { padding: 8px; border-radius: 10px; }
-  .footer-card img { border-radius: 6px; }
-}
-
-/* Very small phones */
-@media (max-width: 380px) {
-  .title { font-size: 20px; }
-  #clockNow { font-size: 28px; width: 110px; }
-  .row .name, .row .time { font-size: 18px; }
-}
-
 </style>
 </head>
 <body>
@@ -197,15 +167,15 @@
       <div class="rows" id="rows"></div>
     </div>
 
-    <!-- Footer picture card (appears after the Isha row/table) -->
-  <div class="footer-card">
-  <a href="https://www.whatsapp.com/channel/0029Vb6qOgq9MF8xjuiinL1f" target="_blank" rel="noopener">
-    <img src="whatsapp.png" alt="Join our WhatsApp Channel – Masjid al Noor"></a>
-</div>
+    <!-- Hidden status (kept so script never crashes) -->
+    <div id="status" style="display:none; min-width:260px; text-align:right; color:var(--muted);"></div>
 
-  </div>
-
-
+    <!-- Footer picture card -->
+    <div class="footer-card">
+      <a href="https://www.whatsapp.com/channel/0029Vb6qOgq9MF8xjuiinL1f" target="_blank" rel="noopener">
+        <img src="whatsapp.png" alt="Join our WhatsApp Channel – Masjid al Noor">
+      </a>
+    </div>
 
   </div>
 
@@ -230,6 +200,8 @@
   let cdTimer = null;         // countdown interval
   let lastNextTime = null;    // Date of upcoming iqamah
   let cache = null;           // {todayRow, tomorrowRow, headers} for re-render
+
+  function setStatus(msg){ if(statusEl) statusEl.textContent = msg; }
 
   function fmtTime(d){ return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:TZ}).format(d); }
   function fmtDateLong(d){ return new Intl.DateTimeFormat('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:TZ}).format(d); }
@@ -424,7 +396,8 @@
 
     const now = new Date();
     const isFriToday = now.getDay()===5;
-    const isFriTomorrow = (new Date(now.getFullYear(), now.getMonth(), now.getDate()+1)).getDay()===5;
+    theTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1);
+    const isFriTomorrow = theTomorrow.getDay()===5;
 
     // Friday blanking for Dhuhr
     const dhuhr = slots.find(s => isDhuhr(s.label));
@@ -510,16 +483,20 @@
   function loadFromText(csvText, name='(pasted)'){
     try{
       const {headers,data}=parseCSV(csvText);
-      if(!headers.length || !data.length){ statusEl.textContent='CSV empty.'; return; }
+      if(!headers.length || !data.length){ setStatus('CSV empty.'); return; }
       const today  = getRowForOffset(data, headers, 0);
       const tomorrow = getRowForOffset(data, headers, 1);
-      if(!today){ const dc=findDateCol(headers); const sample=data.slice(0,5).map(r=>r[dc]).join(' | ');
-        statusEl.innerHTML=`<span style="color:#fca5a5">Could not match today.</span> Samples: ${sample}`; return; }
-      statusEl.textContent=`Loaded ${name} (${data.length} rows)`;
+      if(!today){
+        const dc=findDateCol(headers);
+        const sample=data.slice(0,5).map(r=>r[dc]).join(' | ');
+        setStatus(`Could not match today. Samples: ${sample}`);
+        return;
+      }
+      setStatus(`Loaded ${name} (${data.length} rows)`);
       render(today, tomorrow, headers);
       localStorage.setItem(STORAGE_KEY,csvText);
       localStorage.setItem(STORAGE_NAME,name);
-    }catch(e){ console.error(e); statusEl.textContent='Failed to read CSV.'; }
+    }catch(e){ console.error(e); setStatus('Failed to read CSV.'); }
   }
 
   async function tryLoadFromServer(){
@@ -528,7 +505,7 @@
       const resp = await fetch(AUTO_FILE + '?t=' + Date.now(), {cache:'no-store'});
       if(!resp.ok) throw new Error('HTTP '+resp.status);
       const t = await resp.text();
-      statusEl.textContent='Loaded prayertime.csv from server';
+      setStatus('Loaded prayertime.csv from server');
       loadFromText(t,'prayertime.csv');
       return true;
     }catch(e){
@@ -542,11 +519,11 @@
     const name=localStorage.getItem(STORAGE_NAME)||'cached.csv';
     const ok = await tryLoadFromServer();
     if(!ok && cached){
-      statusEl.textContent=`Offline mode — showing last saved: ${name}`;
+      setStatus(`Offline mode — showing last saved: ${name}`);
       loadFromText(cached,name);
     }
     if(!ok && !cached){
-      statusEl.textContent='Waiting for CSV…';
+      setStatus('Waiting for CSV…');
     }
   })();
 
