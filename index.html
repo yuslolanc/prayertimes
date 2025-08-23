@@ -18,15 +18,14 @@
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;font-family:ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", sans-serif;}
 
-  /* === NEW: white page + teal top/bottom frame === */
+  /* === white page + top/bottom frame image === */
   body{
     color:var(--text);
     background:#fff url("./background.png") no-repeat center top / cover;
-    /* fallback for screens without the image */
     background-color:#fff;
   }
 
-  /* shift content down so it clears the top banner in background.png */
+  /* content clears top banner area of background.png */
   .shell{
     position:relative; 
     min-height:100%; 
@@ -35,7 +34,7 @@
     color:var(--cardText);
   }
 
-  /* cards keep their dark glass look */
+  /* dark ‘glass’ cards */
   .card{
     background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0));
     background-color:rgba(10,12,12,.70);
@@ -45,23 +44,23 @@
     backdrop-filter:blur(10px) saturate(120%);
   }
 
-  /* === Slight upsize for better proportion on portrait screens === */
+  /* clock: lowered a bit so it's further from the gold stripe and closer to the card */
   #clockNow {
-    margin: 30px auto 12px auto;
+    margin: 30px auto 12px auto;   /* ↑ tweak this top margin if you want it even lower */
     text-align: center;
-    font-size: 48px;          /* up from 42 */
+    font-size: 48px;
     font-weight: 900;
     letter-spacing: 2px;
-    width: 168px;             /* scaled with logo */
+    width: 168px;
     max-width: 92%;
-    color: var(--text);       /* clock sits on the white area */
+    color: var(--text);
   }
 
   .header.card{
     display:grid;
     grid-template-columns: 1fr auto 1fr;
     align-items:center;
-    padding:18px 20px;        /* up from 14px */
+    padding:18px 20px;
   }
   .header .center{ grid-column:2; display:flex; flex-direction:column; align-items:center; gap:12px; }
   .logo{ height:128px; width:128px; object-fit:contain; border-radius:18px; background:#fff; }
@@ -92,7 +91,7 @@
 
   .inlinecd{ margin-top:6px; font-size:15px; font-weight:800; letter-spacing:.5px; color:#bfdbfe; opacity:.95; }
 
-  /* footer promo stays as a dark card but a touch larger */
+  /* footer promo */
   .footer-card{
     background: rgba(255,255,255,.06);
     border: 1px solid rgba(255,255,255,.10);
@@ -105,10 +104,10 @@
   .footer-card a:hover{ cursor:pointer; }
   .footer-card img{ display:block; width:100%; height:auto; border-radius:10px; }
 
-  /* ====== Responsive tweaks (kept, lightly adjusted for new sizes) ====== */
+  /* responsive tweaks */
   @media (max-width: 900px) {
     .shell { padding: 140px 16px 120px; gap: 16px; }
-    #clockNow { font-size: 42px; width: 148px; color:var(--text); }
+    #clockNow { font-size: 42px; width: 148px; }
     .logo { width: 108px; height: 108px; }
     .title { font-size: 34px; }
     .datechip { min-width: 300px; font-size: 26px; padding: 16px 20px; }
@@ -146,7 +145,7 @@
 <body>
   <div class="shell">
 
-    <!-- Top digital clock (sits in the white area) -->
+    <!-- Top digital clock -->
     <div id="clockNow">--:--</div>
 
     <div class="header card">
@@ -181,11 +180,10 @@
   </div>
 
 <script>
-/* JS unchanged except for clock color which now inherits from CSS */
 (() => {
   const TZ = 'Europe/London';
-  const STORAGE_KEY  = 'kioskCSVTextV7';
-  const STORAGE_NAME = 'kioskCSVNameV7';
+  const STORAGE_KEY  = 'kioskCSVTextV8';   // bumped to avoid stale cache
+  const STORAGE_NAME = 'kioskCSVNameV8';
   const AUTO_FILE    = './prayertime.csv';
   const PRS = ['Fajr','Dhuhr','Asr','Maghrib','Isha'];
 
@@ -195,7 +193,6 @@
   const clockEl  = document.getElementById('clockNow');
 
   const norm = s => (s||'').toLowerCase().replace(/[\s_\-]/g,'').trim();
-  const isDhuhr = s => ['dhuhr','dhur','zuhr','zuhur','duhr'].includes(norm(s));
 
   let cdTimer = null;
   let lastNextTime = null;
@@ -209,33 +206,32 @@
     try{
       const f = new Intl.DateTimeFormat('en-GB-u-ca-islamic-umalqura',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:TZ});
       const out = f.format(d);
-      if(/January|February|March|April|May|June|July|August|September|October|November|December/.test(out)) return approxHijri(d);
+      // very old Safari can fall back to Gregorian; if that happens show dash
+      if(/January|February|March|April|May|June|July|August|September|October|November|December/.test(out)) return '—';
       return out.replace(' AH',' AH');
-    }catch(e){ return approxHijri(d); }
-  }
-  function approxHijri(g){
-    const months = ["Muharram","Safar","Rabiʿ al-Awwal","Rabiʿ al-Thani","Jumada al-Ula","Jumada al-Akhira","Rajab","Shaʿban","Ramadan","Shawwal","Dhu al-Qaʿdah","Dhu al-Hijjah"];
-    const day = g.getUTCDate(); const month = g.getUTCMonth()+1; const year = g.getUTCFullYear();
-    const jd = Math.floor((1461*(year+4800-Math.floor((14-month)/12)))/4) + Math.floor((367*(month-2-12*Math.floor((14-month)/12)))/12) - Math.floor((3*Math.floor((year+4900-Math.floor((14-month)/12))/100))/4) + day - 32075;
-    const islamic = Math.floor((jd - 1948439.5) / 29.530588861);
-    const iMonth = Math.max(1, Math.min(12, Math.floor((jd - 1948439.5 - islamic*29.530588861) / 29.530588861 * 12) + 1));
-    const iDay   = Math.max(1, Math.min(30, Math.floor(jd - (islamic*29.530588861 + 1948439.5) + 1)));
-    const iYear  = Math.floor((islamic + 8) / 12) + 1 + 1440 - 1;
-    return `${months[iMonth-1]} ${iDay}, ${iYear} AH`;
+    }catch(e){ return '—'; }
   }
 
   function tick(){
     const now=new Date();
-    const timeNow = fmtTime(now);
-    if(clockEl) clockEl.textContent = timeNow;
+    if(clockEl) clockEl.textContent = fmtTime(now);
     datechip.innerHTML =
       '<small>'+fmtDateLong(now)+'</small>' +
       '<span class="hijri">'+fmtHijri(now)+'</span>';
   }
   tick(); setInterval(tick,1000);
 
-  function cleanText(t){ if(!t) return ''; t = t.replace(/^﻿/, '').replace(/\u0000/g,''); t = t.replace(/\r\n/g, '\n').replace(/\r/g, '\n'); return t; }
-  function firstNonEmptyLine(text){ const lines = text.split(/\n/).map(l=>l.trim()); return lines.find(l => l.length>0) || ''; }
+  /* ---------- CSV parsing (robust) ---------- */
+  function cleanText(t){
+    if(!t) return '';
+    t = t.replace(/^﻿/, '').replace(/\u0000/g,'');           // BOM + nulls
+    t = t.replace(/\r\n/g, '\n').replace(/\r/g, '\n');       // normalise
+    return t;
+  }
+  function firstNonEmptyLine(text){
+    const lines = text.split(/\n/).map(l=>l.trim());
+    return lines.find(l => l.length>0) || '';
+  }
   function detectDelimiter(text){
     const header = firstNonEmptyLine(text);
     const cands=[',',';','\t','|']; let best=',', n=0;
@@ -266,10 +262,13 @@
     while(rows.length && rows[0].every(x => String(x||'').trim()==='')) rows.shift();
     if(!rows.length) return {headers:[], data:[]};
     const headers = rows[0].map(h => String(h||'').replace(/^﻿/,'').trim());
-    const data = rows.slice(1).filter(r => r.some(x => (x||'').trim()!=='')).map(r => Object.fromEntries(headers.map((h,i)=>[h, r[i]??''])));
+    const data = rows.slice(1)
+      .filter(r => r.some(x => (x||'').trim()!==''))
+      .map(r => Object.fromEntries(headers.map((h,i)=>[h, r[i]??''])));
     return {headers, data, delim};
   }
 
+  /* ---------- column helpers ---------- */
   const usedCols = new Set();
   function claim(col){ if(col) usedCols.add(col); return col; }
 
@@ -292,57 +291,56 @@
       });
       return claim(candidates[0][0]);
     }
+    return null;
+  }
 
-    const target = (p||'').toLowerCase();
-    let best=null, score=-1;
-    for(const h of headers){
-      if(usedCols.has(h)) continue;
-      const n=(h||'').toLowerCase().replace(/[\s_\-]/g,'').trim();
-      let sc=0;
-      if(n===target) sc+=100;
-      if(n.startsWith(target)) sc+=50;
-      if(n.includes(target)) sc+=10;
-      if(/iqama?h?/.test(n)) sc+=3;
-      if(/jama?a?t/.test(n)) sc+=1;
-      if(sc>score){score=sc; best=h;}
+  /* ---------- year-agnostic date handling ---------- */
+  function parseDate(s){
+    if(!s) return null;
+    s = String(s).trim();
+    const nowYear = (new Date()).getFullYear();
+
+    // dd/mm[/yyyy] or dd-mm[-yyyy]; if year missing, assume current year
+    let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?$/);
+    if (m) {
+      const d  = +m[1], mo = +m[2];
+      const y  = m[3] ? (+m[3] < 100 ? 2000 + +m[3] : +m[3]) : nowYear;
+      return new Date(y, mo - 1, d);
     }
-    return claim(score>0?best:null);
+    // ISO yyyy-mm-dd still supported
+    m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+
+    const t = Date.parse(s);
+    return isNaN(t) ? null : new Date(t);
   }
 
-function parseDate(s){
-  if(!s) return null;
-  s = String(s).trim();
-  const nowYear = (new Date()).getFullYear();
-
-  // dd/mm[/yyyy] or dd-mm[-yyyy]  → if year missing, assume current year
-  let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?$/);
-  if (m) {
-    const d  = +m[1], mo = +m[2];
-    const y  = m[3] ? (+m[3] < 100 ? 2000 + +m[3] : +m[3]) : nowYear;
-    return new Date(y, mo - 1, d);
+  function findDateCol(headers){
+    return headers.find(h=>((h||'').toLowerCase().replace(/[\s_\-]/g,'').trim())==='date') || headers[0];
   }
 
-  // ISO yyyy-mm-dd (still supported if you ever use it)
-  m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (m) return new Date(+m[1], +m[2]-1, +m[3]);
-
-  // Fallback
-  const t = Date.parse(s);
-  return isNaN(t) ? null : new Date(t);
-}
-  function sameDay(a,b){ return a && b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
-  function findDateCol(headers){ return headers.find(h=>((h||'').toLowerCase().replace(/[\s_\-]/g,'').trim())==='date') || headers[0]; }
+  // Match by day+month (ignores year) so CSV is perpetual and works across year boundaries
   function getRowForOffset(rows, headers, offset){
     const dc=findDateCol(headers);
     const base=new Date();
     const target=new Date(base.getFullYear(), base.getMonth(), base.getDate()+offset);
+    const tDay = target.getDate(), tMonth = target.getMonth(); // 0-based month
+
     for(const r of rows){
       const d=parseDate(r[dc]); if(!d) continue;
-      if(sameDay(d,target)) return {row:r, dateHeader:dc};
+      if(d.getDate()===tDay && d.getMonth()===tMonth){
+        return {row:r, dateHeader:dc};
+      }
     }
     return null;
   }
-  function displayHHMM(s){ if(!s) return ''; const m = String(s).match(/(\d{1,2}):(\d{2})/); return m ? `${m[1].padStart(2,'0')}:${m[2]}` : String(s); }
+
+  function displayHHMM(s){
+    if(!s) return '';
+    const m = String(s).match(/(\d{1,2}):(\d{2})/);
+    return m ? `${m[1].padStart(2,'0')}:${m[2]}` : String(s);
+  }
+
   function parseTimeToToday(s){
     if(!s) return null; s=String(s).trim().toLowerCase().replace(/\./g,':');
     let m=s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([ap]m))?$/); if(!m) return null;
@@ -377,6 +375,7 @@ function parseDate(s){
     const slots=[];
     const PRS=['Fajr','Dhuhr','Asr','Maghrib','Isha'];
 
+    // Build slots in canonical order using smart header matching
     for(const p of PRS){
       const col=findPrayerHeader(headers,p);
       const tToday = col? String(todayRow.row[col]||'').trim():'';
@@ -384,13 +383,14 @@ function parseDate(s){
       if(tToday || tTomorrow) slots.push({label:p, today:tToday, tomorrow:tTomorrow});
     }
 
+    // Friday handling: hide Dhuhr, insert Jumuah pair if present
     const now = new Date();
     const isFriToday = now.getDay()===5;
     const theTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1);
     const isFriTomorrow = theTomorrow.getDay()===5;
 
-    const isDhuhr = s => ['dhuhr','dhur','zuhr','zuhur','duhr'].includes((s||'').toLowerCase());
-    const dhuhr = slots.find(s => isDhuhr(s.label));
+    const isDhuhrName = s => ['dhuhr','dhur','zuhr','zuhur','duhr'].includes((s||'').toLowerCase());
+    const dhuhr = slots.find(s => isDhuhrName(s.label));
     if(dhuhr){ if(isFriToday) dhuhr.today=''; if(isFriTomorrow) dhuhr.tomorrow=''; }
 
     const findExact = (headers, key)=>{
@@ -410,6 +410,7 @@ function parseDate(s){
       if(combined) slots.push({label:'Jummah 1/2', today:'', tomorrow:combined, jumuah:true});
     }
 
+    // Determine next salah
     let nextIdx=-1, nextTime=null;
     const parsed = slots.map((s,i)=>{
       let d=null;
@@ -422,6 +423,7 @@ function parseDate(s){
       if(d && d>new Date() && (!nextTime || d<nextTime)){ nextTime=d; nextIdx=i; }
       return {...s, date:d};
     });
+    // If none left today, pick tomorrow's Fajr and count down to it
     if(nextIdx===-1){
       const fajrIdx = parsed.findIndex(x=>((x.label||'').toLowerCase())==='fajr' && x.today);
       if(fajrIdx>=0){
@@ -430,6 +432,7 @@ function parseDate(s){
       }
     }
 
+    // Render rows
     parsed.forEach((s,i)=>{
       const n = (s.label||'').toLowerCase();
       const left = n==='fajr'?'Fajr': n==='dhuhr'||n==='dhur'||n==='zuhr'||n==='zuhur'?'Dhuhr'
@@ -500,6 +503,7 @@ function parseDate(s){
     }
   })();
 
+  // hard refresh a bit after midnight to roll dates
   function msToMidnight(){ const n=new Date(); const x=new Date(n); x.setHours(24,0,0,0); return x-n; }
   setTimeout(()=>location.reload(), msToMidnight()+5000);
 })();
