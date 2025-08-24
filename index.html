@@ -3,10 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Iqamah Times</title>
-   <!-- Favicon -->
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
-  <link rel="apple-touch-icon" href="favicon.png">
+<title>Masjid al Noor • Iqamah Times</title>
+
+<!-- Favicon -->
+<link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+
 <style>
   :root{
     /* palette */
@@ -17,48 +19,56 @@
     --text:#0b1418;
     --cardText:#e8f0f2;
 
-    /* dynamic padding (will be updated by JS after images load) */
-    --topPad:140px;
-    --bottomPad:120px;
+    /* populated dynamically from banner image heights */
+    --topPad:140px;      /* fallback before images load */
+    --bottomPad:120px;   /* fallback before images load */
   }
 
-  *{box-sizing:border-box}
-   html, body {
-      height: 100%;
-      margin: 0;
-      overflow: hidden; /* 🚫 prevents scrollbar */
-      font-family: ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", sans-serif;
-    }
+  *{ box-sizing:border-box }
 
-  /* plain white page; banners are real images fixed to edges */
-  body{
+  /* lock the page — no browser scrollbar */
+  html, body{
+    height:100%;
+    margin:0;
+    overflow:hidden; /* ← prevents the right-hand scrollbar */
+    font-family:ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", sans-serif;
     color:var(--text);
     background:#fff;
   }
 
-  /* ===== Responsive top/bottom banners ===== */
+  /* fixed banners (scale responsively) */
   #topBanner, #bottomBanner{
     position:fixed;
     left:0;
     width:100%;
     height:auto;
-    pointer-events:none;   /* avoid blocking clicks */
-    z-index:-1;            /* sit behind all content */
+    pointer-events:none;
+    z-index:-1;      /* keep behind content */
     display:block;
   }
   #topBanner{ top:0; }
   #bottomBanner{ bottom:0; }
 
-  /* ===== Content shell: auto padded by banner heights ===== */
+  /* CONTENT AREA: pinned between banners (no page scroll) */
   .shell{
-    position:relative; 
-    min-height:100%; 
-    padding: calc(var(--topPad) + 20px) 22px calc(var(--bottomPad) + 20px);
-    display:flex; flex-direction:column; gap:22px;
+    position:fixed;
+    /* distance from screen edges equals banner heights + small gutters */
+    top:    calc(var(--topPad) + 20px);
+    bottom: calc(var(--bottomPad) + 20px);
+    left:22px;
+    right:22px;
+
+    display:flex; 
+    flex-direction:column; 
+    gap:22px;
+
+    /* kiosk: no inner scroll; change to auto if you ever want it */
+    overflow:hidden;
+
     color:var(--cardText);
   }
 
-  /* ===== Cards / layout ===== */
+  /* Cards / visuals */
   .card{
     background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0));
     background-color:rgba(10,12,12,.70);
@@ -68,15 +78,15 @@
     backdrop-filter:blur(10px) saturate(120%);
   }
 
-  #clockNow {
-    margin: 30px auto 12px auto;
-    text-align: center;
-    font-size: 48px;
-    font-weight: 900;
-    letter-spacing: 2px;
-    width: 168px;
-    max-width: 92%;
-    color: var(--text);
+  #clockNow{
+    margin: 10px auto 6px auto;
+    text-align:center;
+    font-size:48px;
+    font-weight:900;
+    letter-spacing:2px;
+    width:168px;
+    max-width:92%;
+    color:var(--text);
   }
 
   .header.card{
@@ -117,16 +127,20 @@
     border: 1px solid rgba(255,255,255,.10);
     border-radius: 14px;
     padding: 12px;
-    margin-top: 14px;
+    margin-top: auto;   /* push footer to bottom of the column */
     box-shadow: 0 6px 18px rgba(0,0,0,.25) inset, 0 8px 20px rgba(0,0,0,.25);
   }
   .footer-card a{ display:block; }
   .footer-card a:hover{ cursor:pointer; }
   .footer-card img{ display:block; width:100%; height:auto; border-radius:10px; }
 
-  /* responsive tweaks */
+  /* responsive insets (match old paddings) */
   @media (max-width: 900px) {
-    .shell { padding: calc(var(--topPad) + 16px) 16px calc(var(--bottomPad) + 16px); gap: 16px; }
+    .shell { 
+      top:    calc(var(--topPad) + 16px);
+      bottom: calc(var(--bottomPad) + 16px);
+      left:16px; right:16px; gap:16px;
+    }
     #clockNow { font-size: 42px; width: 148px; }
     .logo { width: 108px; height: 108px; }
     .title { font-size: 34px; }
@@ -138,7 +152,11 @@
     .row .tomorrow { font-size: 20px; }
   }
   @media (max-width: 600px) {
-    .shell { padding: calc(var(--topPad) + 12px) 12px calc(var(--bottomPad) + 12px); gap: 12px; }
+    .shell { 
+      top:    calc(var(--topPad) + 12px);
+      bottom: calc(var(--bottomPad) + 12px);
+      left:12px; right:12px; gap:12px;
+    }
     .header.card { grid-template-columns: 1fr; gap: 8px; text-align:center; }
     .header .center { grid-column: 1; }
     .datechip { grid-column: 1; justify-self:center; min-width:0; padding:12px 14px; font-size:20px; }
@@ -164,10 +182,11 @@
 </head>
 <body>
 
-  <!-- Responsive fixed banners (match your filenames exactly) -->
+  <!-- Fixed responsive banners -->
   <img id="topBanner" src="top_banner.png" alt="">
   <img id="bottomBanner" src="bottom_banner.png" alt="">
 
+  <!-- Content region pinned between banners -->
   <div class="shell">
 
     <!-- Top digital clock -->
@@ -177,9 +196,7 @@
       <div></div>
       <div class="center">
         <img class="logo" src="./logo.png" alt="Logo" onerror="this.style.display='none'"/>
-        <div class="titles">
-          <div class="title">Masjid al Noor - Iqamah Times</div>
-        </div>
+        <div class="titles"><div class="title">Masjid al Noor - Iqamah Times</div></div>
       </div>
       <div class="datechip" id="datechip">
         <small>—</small>
@@ -206,10 +223,11 @@
 
 <script>
 (() => {
-  /* ===== Dynamic padding to banner heights ===== */
+  /* Measure banner heights and update CSS variables */
   const root = document.documentElement;
   const tImg = document.getElementById('topBanner');
   const bImg = document.getElementById('bottomBanner');
+
   function setPads(){
     requestAnimationFrame(() => {
       const th = tImg ? tImg.getBoundingClientRect().height : 0;
@@ -228,12 +246,11 @@
   });
   setPads();
 
-  /* ===== App logic (clock, CSV, table, countdown) ===== */
+  /* ===== Kiosk app logic ===== */
   const TZ = 'Europe/London';
   const STORAGE_KEY  = 'kioskCSVTextV8';
   const STORAGE_NAME = 'kioskCSVNameV8';
   const AUTO_FILE    = './prayertime.csv';
-  const PRS = ['Fajr','Dhuhr','Asr','Maghrib','Isha'];
 
   const rowsEl = document.getElementById('rows');
   const datechip = document.getElementById('datechip');
@@ -260,17 +277,9 @@
   }
   tick(); setInterval(tick,1000);
 
-  /* ---------- CSV parsing ---------- */
-  function cleanText(t){
-    if(!t) return '';
-    t = t.replace(/^﻿/, '').replace(/\u0000/g,'');
-    t = t.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    return t;
-  }
-  function firstNonEmptyLine(text){
-    const lines = text.split(/\n/).map(l=>l.trim());
-    return lines.find(l => l.length>0) || '';
-  }
+  /* CSV parsing (robust) */
+  function cleanText(t){ return (t||'').replace(/^﻿/, '').replace(/\u0000/g,'').replace(/\r\n/g,'\n').replace(/\r/g,'\n'); }
+  function firstNonEmptyLine(text){ return text.split(/\n/).map(l=>l.trim()).find(l=>l.length>0) || ''; }
   function detectDelimiter(text){
     const header = firstNonEmptyLine(text);
     const cands=[',',';','\t','|']; let best=',', n=0;
@@ -307,7 +316,6 @@
     return {headers, data, delim};
   }
 
-  /* ---------- helpers ---------- */
   const usedCols = new Set();
   function claim(col){ if(col) usedCols.add(col); return col; }
   function findPrayerHeader(headers, p){
@@ -330,6 +338,7 @@
     }
     return null;
   }
+
   function parseDate(s){
     if(!s) return null;
     s = String(s).trim();
@@ -393,7 +402,6 @@
   }
 
   function render(todayRow, tomorrowRow, headers){
-    const rowsEl = document.getElementById('rows');
     rowsEl.innerHTML='';
     usedCols.clear();
     const slots=[];
