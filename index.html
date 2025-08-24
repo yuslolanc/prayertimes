@@ -468,7 +468,8 @@
     const fmtPair=(t1,t2)=>[displayHHMM(t1),displayHHMM(t2)].filter(Boolean).join(' · ');
     if(isFriToday && (hJ1 || hJ2)){
       const combined = fmtPair(hJ1?todayRow.row[hJ1]:'', hJ2?todayRow.row[hJ2]:'');
-      if(combined) slots.splice(1,0){label:'Jummah 1/2', today:combined, tomorrow:'', jumuah:true};
+      if(combined) slots.splice(1, 0, { label: 'Jummah 1/2', today: combined, tomorrow: '', jumuah: true });
+
     }
     if(isFriTomorrow && (hJ1 || hJ2)){
       const combined = fmtPair(hJ1&&tomorrowRow?tomorrowRow.row[hJ1]:'', hJ2&&tomorrowRow?tomorrowRow.row[hJ2]:'');
