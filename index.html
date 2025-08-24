@@ -36,18 +36,34 @@
     background:#fff;
   }
 
-  /* fixed banners (scale responsively) */
-  #topBanner, #bottomBanner{
-    position:fixed;
-    left:0;
-    width:100%;
-    height:auto;
-    pointer-events:none;
-    z-index:-1;      /* keep behind content */
-    display:block;
-  }
-  #topBanner{ top:0; }
-  #bottomBanner{ bottom:0; }
+/* fixed banners (scale responsively) */
+#topBanner, #bottomBanner{
+  position:fixed;
+  left:0;
+  width:100%;
+  height:auto;
+  pointer-events:none;
+  z-index:0;          /* ← changed from -1 */
+  display:block;
+}
+#topBanner{ top:0; }
+#bottomBanner{ bottom:0; }
+
+/* keep content above banners */
+.shell{
+  position:fixed;
+  z-index:1;          /* ← new line so shell sits above banners */
+  top:    calc(var(--topPad) + 20px);
+  bottom: calc(var(--bottomPad) + 20px);
+  left:22px; right:22px;
+
+  display:flex; 
+  flex-direction:column; 
+  gap:22px;
+  overflow:hidden;
+  color:var(--cardText);
+}
+
 
   /* CONTENT AREA: pinned between banners (no page scroll) */
   .shell{
