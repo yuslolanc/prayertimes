@@ -80,7 +80,7 @@
     align-items:center;
     justify-content:center;
   }
- .mast .logo img {
+  .mast .logo img {
     height: 140px;
     width: auto;
     object-fit: contain;
@@ -89,8 +89,9 @@
     background: transparent;
     box-shadow: none;
     filter: none;
-}
   }
+
+  /* Clock */
   #clockNow{
     margin: 6px auto 0 auto;
     text-align:center;
@@ -99,9 +100,9 @@
     letter-spacing:2px;
     width:auto;
     max-width:92%;
-    color:#000000; /* changed to black */
-    opacity: 1 !important;     /* stop it looking greyed out */
+    color:#000000; /* solid black */
   }
+
   .datesRow{
     width:min(1100px, 92vw);
     display:flex;
@@ -467,7 +468,7 @@
     const fmtPair=(t1,t2)=>[displayHHMM(t1),displayHHMM(t2)].filter(Boolean).join(' · ');
     if(isFriToday && (hJ1 || hJ2)){
       const combined = fmtPair(hJ1?todayRow.row[hJ1]:'', hJ2?todayRow.row[hJ2]:'');
-      if(combined) slots.splice(1,0,{label:'Jummah 1/2', today:combined, tomorrow:'', jumuah:true});
+      if(combined) slots.splice(1,0){label:'Jummah 1/2', today:combined, tomorrow:'', jumuah:true};
     }
     if(isFriTomorrow && (hJ1 || hJ2)){
       const combined = fmtPair(hJ1&&tomorrowRow?tomorrowRow.row[hJ1]:'', hJ2&&tomorrowRow?tomorrowRow.row[hJ2]:'');
