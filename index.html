@@ -23,7 +23,12 @@
   }
 
   *{box-sizing:border-box}
-  html,body{height:100%;margin:0;font-family:ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", sans-serif;}
+   html, body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden; /* 🚫 prevents scrollbar */
+      font-family: ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", sans-serif;
+    }
 
   /* plain white page; banners are real images fixed to edges */
   body{
